@@ -72,3 +72,8 @@ Plugins/*/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+# Don't include the _HWAssets folder or the Megascans stuff
+Content/_HWAssets/*
+Content/Megascans/*
+Content/MSPresets/*
