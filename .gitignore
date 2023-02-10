@@ -78,3 +78,7 @@ DerivedDataCache/*
 Content/_HWAssets/*
 Content/Megascans/*
 Content/MSPresets/*
+
+# Include everything in the OWSInstanceLauncher folder
+!OWSInstanceLauncher/*
+!OWSInstanceLauncher/**
