@@ -1,1 +1,0 @@
-DEFINE_LOG_CATEGORY(LogHubWorldMMO);
