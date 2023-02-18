@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Engine/NetSerialization.h"
 #include "OWSPlayerControllerComponent.h"
 #include "./Character/HWCharacter.h"
 #include "./Inventory/HWInventoryComponent.h"
@@ -40,6 +41,58 @@ struct FHWInitializationPart
 
 };
 
+USTRUCT(BlueprintType, Blueprintable)
+struct FHWSupplyPodOpenedItem : public FFastArraySerializerItem
+{
+	GENERATED_USTRUCT_BODY()
+
+		friend struct FHWSupplyPodMaster;
+
+	FHWSupplyPodOpenedItem()
+	{
+		SupplyPodGUID = FGuid();
+	}
+
+	/*
+	void PreReplicatedRemove(const struct FHWSupplyPodMaster& InArray);
+	void PostReplicatedAdd(const struct FHWSupplyPodMaster& InArray);
+	void PostReplicatedChange(const struct FHWSupplyPodMaster& InArray);
+	*/
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Persistence")
+		FGuid SupplyPodGUID;
+};
+
+USTRUCT(BlueprintType, Blueprintable)
+struct FHWSupplyPodMaster : public FFastArraySerializer
+{
+	GENERATED_USTRUCT_BODY()
+
+		friend struct FHWSupplyPodOpenedItem;
+
+	FHWSupplyPodMaster()
+	{
+
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Persistence")
+		TArray<FHWSupplyPodOpenedItem> SupplyPods;
+
+	bool NetDeltaSerialize(FNetDeltaSerializeInfo& DeltaParms)
+	{
+		return FastArrayDeltaSerialize<FHWSupplyPodOpenedItem>(SupplyPods, DeltaParms, *this);
+	}
+};
+
+template<>
+struct TStructOpsTypeTraits<FHWSupplyPodMaster> : public TStructOpsTypeTraitsBase2<FHWSupplyPodMaster> //TStructOpsTypeTraitsBase
+{
+	enum
+	{
+		WithNetDeltaSerializer = true,
+	};
+};
+
 /**
  * 
  */
@@ -57,8 +110,29 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "HW|PlayerController")
 		UHWAbilitySystemComponent* GetHWAbilitySystemComponent() const;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Inventory")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "HW|Inventory")
 		UHWInventoryComponent* InventoryComponentForInventoryUI;
+
+	// Supply Pods Opened (Replicated)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_SupplyPodsOpened, Category = "HW|Persistence")
+		FHWSupplyPodMaster SupplyPodsOpened;
+
+	UFUNCTION()
+		virtual void OnRep_SupplyPodsOpened();
+
+	// Serialize Base Character Stats to an FString
+	UFUNCTION(BlueprintCallable, Category = "HW|Persistence")
+		FString SerializeSupplyPodsOpened();
+
+	// Deserialize an FString to Base Character Stats
+	UFUNCTION(BlueprintCallable, Category = "HW|Persistence")
+		void LoadSupplyPodsOpenedFromJSON(FString SupplyPodsOpenedJSON);
+
+	UFUNCTION(BlueprintCallable, Category = "HW|Persistence")
+		void AddSupplyPodToOpenedList(FGuid SupplyPodGUID);
+
+	UFUNCTION(BlueprintCallable, Server, Unreliable)
+		void Server_OpenSupplyPod();
 
 	UPROPERTY(BlueprintReadWrite)
 		FString OWSAPICustomerKey;

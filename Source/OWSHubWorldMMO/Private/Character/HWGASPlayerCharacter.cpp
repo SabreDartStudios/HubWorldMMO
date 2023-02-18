@@ -46,6 +46,7 @@ void AHWGASPlayerCharacter::PossessedBy(AController* NewController)
 	{
 		if (AbilitySet)
 		{
+			UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWGASPlayerCharacter - PossessedBy AbilitySet Granted"));
 			AbilitySet->GiveToAbilitySystem(GetHWAbilitySystemComponent(), nullptr);
 		}
 	}
@@ -53,6 +54,8 @@ void AHWGASPlayerCharacter::PossessedBy(AController* NewController)
 
 void AHWGASPlayerCharacter::InitializePlayerInput(UInputComponent* PlayerInputComponent)
 {
+	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWGASPlayerCharacter - InitializePlayerInput Started"));
+
 	const FHWGameplayTags& GameplayTags = FHWGameplayTags::Get();
 	
 	check(PlayerInputComponent);

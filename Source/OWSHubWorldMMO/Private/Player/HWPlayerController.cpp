@@ -2,6 +2,8 @@
 
 
 #include "./Player/HWPlayerController.h"
+#include "Runtime/JsonUtilities/Public/JsonObjectConverter.h"
+#include "Net/UnrealNetwork.h"
 #include "./Character/HWGASCharacter.h"
 #include "OWSGameInstance.h"
 #include "../OWSHubWorldMMO.h"
@@ -200,6 +202,64 @@ void AHWPlayerController::HideLoadingScreen()
 	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - HideLoadingScreen Started"));
 
 }
+
+/***** Supply Pods *****/
+
+FString AHWPlayerController::SerializeSupplyPodsOpened()
+{
+	FString SerializedSupplyPodsOpened = "";
+	if (FJsonObjectConverter::UStructToJsonObjectString(SupplyPodsOpened, SerializedSupplyPodsOpened))
+	{
+		return SerializedSupplyPodsOpened;
+	}
+	return "";
+}
+
+void AHWPlayerController::LoadSupplyPodsOpenedFromJSON(FString SupplyPodsOpenedJSON)
+{
+	FJsonObjectConverter::JsonObjectStringToUStruct(SupplyPodsOpenedJSON, &SupplyPodsOpened);
+}
+
+void AHWPlayerController::OnRep_SupplyPodsOpened()
+{
+	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - OnRep_SupplyPodsOpened Started"));
+}
+
+void AHWPlayerController::AddSupplyPodToOpenedList(FGuid SupplyPodGUID)
+{
+	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - AddSupplyPodToOpenedList Started"));
+
+	FHWSupplyPodOpenedItem SupplyPodOpenedItemToAdd;
+
+	SupplyPodOpenedItemToAdd.SupplyPodGUID = SupplyPodGUID;
+
+	FHWSupplyPodOpenedItem& ItemAdded = SupplyPodsOpened.SupplyPods.Add_GetRef(SupplyPodOpenedItemToAdd);
+	SupplyPodsOpened.MarkItemDirty(ItemAdded);
+
+	FString SerializedSupplyPodsOpened = SerializeSupplyPodsOpened();
+}
+
+void AHWPlayerController::Server_OpenSupplyPod_Implementation()
+{
+	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - Server_OpenSupplyPod Started"));
+
+	AddSupplyPodToOpenedList(FGuid::NewGuid());
+}
+
+void AHWPlayerController::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	// Fast Arrays don't use push model, but there's no harm in marking them with it.
+	// The flag will just be ignored.
+
+	FDoRepLifetimeParams Params;
+	Params.bIsPushBased = true;
+	Params.Condition = COND_OwnerOnly;
+
+	DOREPLIFETIME_WITH_PARAMS_FAST(AHWPlayerController, SupplyPodsOpened, Params);
+}
+
 
 //***** Delegate Bindings *****
 
