@@ -10,5 +10,5 @@ void UHWInventoryEntry::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
 	UHWInventoryDisplayItemObject* Item = Cast<UHWInventoryDisplayItemObject>(ListItemObject);
 	NameLabel->SetText(Item->Data.ItemName);
-	IconImage->SetBrushFromTexture(Item->Data.ItemIcon.Get());
+	IconImage->SetBrushFromTexture(Item->Data.ItemIcon.LoadSynchronous());
 }
