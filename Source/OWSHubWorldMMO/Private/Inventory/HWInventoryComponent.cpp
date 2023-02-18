@@ -150,9 +150,31 @@ void UHWInventoryComponent::ReloadDisplayItems()
 	for (auto& InventoryItem : Inventory.Items)
 	{
 		UHWInventoryDisplayItemObject* ItemToAdd = NewObject<UHWInventoryDisplayItemObject>(this, UHWInventoryDisplayItemObject::StaticClass());
+		FInventoryItemTypes* FoundItemType = ItemLibrary->FindRow<FInventoryItemTypes>(FName(FString::FromInt(InventoryItem.ItemTypeID)), "");
+		if (FoundItemType)
+		{
+			//Add details from Runtime inventory data (InventoryItem)
+			ItemToAdd->Data.ItemGUID = InventoryItem.ItemGUID;
+			ItemToAdd->Data.Condition = InventoryItem.Condition;
+			ItemToAdd->Data.CustomJSON = InventoryItem.CustomJSON;
+			ItemToAdd->Data.InSlotNumber = InventoryItem.InSlotNumber;
+			ItemToAdd->Data.ItemTypeID = InventoryItem.ItemTypeID;
+			ItemToAdd->Data.NumberOfUsesLeft = InventoryItem.NumberOfUsesLeft;
+			ItemToAdd->Data.Quantity = InventoryItem.Quantity;
 
-		ItemToAdd->Data.ItemGUID = InventoryItem.ItemGUID;
-		ItemToAdd->Data.ItemName = FText::FromString("Item Name");
-		InventoryDisplayItems.Add(ItemToAdd);
+			//Add details from Setup inventory data (FoundItem from ItemLibrary Data Table)
+			ItemToAdd->Data.ItemName = FText::FromString(FoundItemType->ItemName);
+			ItemToAdd->Data.ItemDescription = FText::FromString(FoundItemType->ItemDescription);
+			ItemToAdd->Data.ItemIcon = FoundItemType->ItemIcon;
+			ItemToAdd->Data.bCanStack = FoundItemType->bCanStack;
+			ItemToAdd->Data.StackSize = FoundItemType->StackSize;
+
+			//Add the item to the array
+			InventoryDisplayItems.Add(ItemToAdd);
+		}
+		else
+		{
+			UE_LOG(OWSHubWorldMMO, Error, TEXT("UHWInventoryComponent - Item Not Found in Item Library - ItemTypeID: %d"), InventoryItem.ItemTypeID);
+		}
 	}
 }

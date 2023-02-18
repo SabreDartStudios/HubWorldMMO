@@ -9,6 +9,7 @@
 #include "Engine/NetSerialization.h"
 #include "HWInventoryComponent.generated.h"
 
+//Row definition for the InventoryLibrary Data Table
 USTRUCT()
 struct FInventoryItemTypes : public FTableRowBase
 {
@@ -30,7 +31,7 @@ public:
 		FString ItemDescription;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
-		TSoftObjectPtr<UTexture> ItemIcon;
+		TSoftObjectPtr<UTexture2D> ItemIcon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory")
 		bool bCanStack;
@@ -39,6 +40,7 @@ public:
 		int32 StackSize;
 };
 
+//Row definition for the combined runtime and setup data for displaying the inventory in the UI
 USTRUCT(BlueprintType, Blueprintable)
 struct FHWInventoryDisplayItem
 {
@@ -86,6 +88,7 @@ struct FHWInventoryDisplayItem
 
 };
 
+//UObject to contain the inventory row struct (this is required by the UI system)
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class OWSHUBWORLDMMO_API UHWInventoryDisplayItemObject : public UObject
 {
@@ -96,7 +99,7 @@ public:
 
 };
 
-
+//Runtime row definition for replicated array using FastArraySerializer
 USTRUCT(BlueprintType, Blueprintable)
 struct FHWInventoryItem : public FFastArraySerializerItem
 {
@@ -138,6 +141,7 @@ struct FHWInventoryItem : public FFastArraySerializerItem
 
 };
 
+//Runtime replicated inventory data 
 USTRUCT(BlueprintType, Blueprintable)
 struct FHWInventoryMaster : public FFastArraySerializer
 {

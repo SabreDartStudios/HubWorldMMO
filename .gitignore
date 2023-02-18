@@ -79,6 +79,7 @@ Content/_HWAssets/*
 Content/Megascans/*
 Content/MSPresets/*
 
-# Include everything in the OWSInstanceLauncher folder
+# Include everything in the OWSInstanceLauncher folder and subfolders except for text files
 !OWSInstanceLauncher/*
 !OWSInstanceLauncher/**
+OWSInstanceLauncher/*.txt
