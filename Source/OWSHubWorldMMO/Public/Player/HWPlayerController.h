@@ -113,6 +113,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "HW|Inventory")
 		UHWInventoryComponent* InventoryComponentForInventoryUI;
 
+	//Interaction
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "HW|Interaction")
+		float InteractionRadius = 200.f;
+
 	// Supply Pods Opened (Replicated)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_SupplyPodsOpened, Category = "HW|Persistence")
 		FHWSupplyPodMaster SupplyPodsOpened;
@@ -134,6 +138,7 @@ public:
 	UFUNCTION(BlueprintCallable, Server, Unreliable)
 		void Server_OpenSupplyPod();
 
+	//OWS
 	UPROPERTY(BlueprintReadWrite)
 		FString OWSAPICustomerKey;
 

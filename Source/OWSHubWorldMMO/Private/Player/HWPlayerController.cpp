@@ -6,6 +6,7 @@
 #include "Net/UnrealNetwork.h"
 #include "./Character/HWGASCharacter.h"
 #include "OWSGameInstance.h"
+#include "./Interactables/Interactable.h"
 #include "../OWSHubWorldMMO.h"
 
 AHWPlayerController::AHWPlayerController()
@@ -243,7 +244,42 @@ void AHWPlayerController::Server_OpenSupplyPod_Implementation()
 {
 	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - Server_OpenSupplyPod Started"));
 
-	AddSupplyPodToOpenedList(FGuid::NewGuid());
+	//Get character transform
+	FTransform CharacterTransform = GetHWCharacter()->GetActorTransform();
+
+	//Sphere trace for IInteractable's by first scanning in a sphere around the character for WorldDynamic actors with InteractionRadius range
+	TArray<FOverlapResult> Overlaps;
+	bool bTraceComplex = false;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(RadiusTargetingOverlap), bTraceComplex);
+	Params.bReturnPhysicalMaterial = false;
+	GetWorld()->OverlapMultiByObjectType(Overlaps, CharacterTransform.GetTranslation(), FQuat::Identity, FCollisionObjectQueryParams(ECC_WorldDynamic), 
+		FCollisionShape::MakeSphere(InteractionRadius), Params);
+
+	TArray<TWeakObjectPtr<AActor>>	OverlappedInteractables;
+	for (int32 i = 0; i < Overlaps.Num(); ++i)
+	{
+		AActor* OverlappedActor = Cast<AActor>(Overlaps[i].GetActor());
+		//Make sure the reference is valid and we aren't interacting with ourselves
+		if (OverlappedActor && OverlappedActor != GetHWCharacter())
+		{
+			//Make sure this overlapped actor is Interactable
+			if (OverlappedActor->Implements<UInteractable>())
+			{
+				OverlappedInteractables.Add(OverlappedActor);
+			}
+		}
+	}
+
+	//Figure out which one to open - For now just pick the first one in the list
+	if (OverlappedInteractables.IsEmpty())
+	{
+		return;
+	}
+
+	IInteractable* InteractableSupplyPod = Cast<IInteractable>(OverlappedInteractables[0]);
+	FGuid SupplyPodGUID = InteractableSupplyPod->GetInteractableGUID();
+
+	AddSupplyPodToOpenedList(SupplyPodGUID);
 }
 
 void AHWPlayerController::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
