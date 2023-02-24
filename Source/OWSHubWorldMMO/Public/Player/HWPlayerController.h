@@ -117,6 +117,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "HW|Interaction")
 		float InteractionRadius = 200.f;
 
+		TArray<TWeakObjectPtr<AActor>> GetOverlappedInteractables();
+
 	// Supply Pods Opened (Replicated)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_SupplyPodsOpened, Category = "HW|Persistence")
 		FHWSupplyPodMaster SupplyPodsOpened;

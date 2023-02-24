@@ -244,17 +244,36 @@ void AHWPlayerController::Server_OpenSupplyPod_Implementation()
 {
 	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - Server_OpenSupplyPod Started"));
 
+	//Get a list of Interactables within range to interact with (InteractionRadius)
+	TArray<TWeakObjectPtr<AActor>>	OverlappedInteractables = GetOverlappedInteractables();
+
+	//If there are no OverlappedInteractables, do nothing
+	if (OverlappedInteractables.IsEmpty())
+	{
+		return;
+	}
+
+	//Figure out which one to open - For now just pick the first one in the list
+	IInteractable* InteractableSupplyPod = Cast<IInteractable>(OverlappedInteractables[0]);
+	FGuid SupplyPodGUID = InteractableSupplyPod->GetInteractableGUID();
+
+	AddSupplyPodToOpenedList(SupplyPodGUID);
+}
+
+TArray<TWeakObjectPtr<AActor>> AHWPlayerController::GetOverlappedInteractables()
+{
 	//Get character transform
 	FTransform CharacterTransform = GetHWCharacter()->GetActorTransform();
 
-	//Sphere trace for IInteractable's by first scanning in a sphere around the character for WorldDynamic actors with InteractionRadius range
+	//Sphere trace for Interactables by first scanning in a sphere around the character for WorldDynamic actors within InteractionRadius range
 	TArray<FOverlapResult> Overlaps;
 	bool bTraceComplex = false;
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(RadiusTargetingOverlap), bTraceComplex);
 	Params.bReturnPhysicalMaterial = false;
-	GetWorld()->OverlapMultiByObjectType(Overlaps, CharacterTransform.GetTranslation(), FQuat::Identity, FCollisionObjectQueryParams(ECC_WorldDynamic), 
+	GetWorld()->OverlapMultiByObjectType(Overlaps, CharacterTransform.GetTranslation(), FQuat::Identity, FCollisionObjectQueryParams(ECC_WorldDynamic),
 		FCollisionShape::MakeSphere(InteractionRadius), Params);
 
+	//Loop through the Overlaps and only add those implementing UInteractable to the OverlappedInteractables array
 	TArray<TWeakObjectPtr<AActor>>	OverlappedInteractables;
 	for (int32 i = 0; i < Overlaps.Num(); ++i)
 	{
@@ -262,7 +281,7 @@ void AHWPlayerController::Server_OpenSupplyPod_Implementation()
 		//Make sure the reference is valid and we aren't interacting with ourselves
 		if (OverlappedActor && OverlappedActor != GetHWCharacter())
 		{
-			//Make sure this overlapped actor is Interactable
+			//Make sure this overlapped actor is Interactable (implementing UInteractable)
 			if (OverlappedActor->Implements<UInteractable>())
 			{
 				OverlappedInteractables.Add(OverlappedActor);
@@ -270,16 +289,7 @@ void AHWPlayerController::Server_OpenSupplyPod_Implementation()
 		}
 	}
 
-	//Figure out which one to open - For now just pick the first one in the list
-	if (OverlappedInteractables.IsEmpty())
-	{
-		return;
-	}
-
-	IInteractable* InteractableSupplyPod = Cast<IInteractable>(OverlappedInteractables[0]);
-	FGuid SupplyPodGUID = InteractableSupplyPod->GetInteractableGUID();
-
-	AddSupplyPodToOpenedList(SupplyPodGUID);
+	return OverlappedInteractables;
 }
 
 void AHWPlayerController::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
