@@ -28,7 +28,7 @@ public:
 		FTransform InteractableTransform;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interactable")
-		TSubclassOf<class AActor> InteractableToSpawn;
+		TSubclassOf<AActor> InteractableToSpawn;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interactable")
 		bool bIsPlayerInstanced;

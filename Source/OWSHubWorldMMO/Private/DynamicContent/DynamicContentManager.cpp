@@ -40,6 +40,17 @@ void ADynamicContentManager::SpawnInteractables()
 	{
 		//InteractableToSpawn.Key;
 		FInteractableDataTableRow* InteractableToSpawnDataTableRow = (FInteractableDataTableRow*)(InteractableToSpawn.Value);
-		UE_LOG(OWSHubWorldMMO, Warning, TEXT("ADynamicContentManager - Spawn Interactable: %s"), *InteractableToSpawnDataTableRow->InteractableGUID.ToString());
+		UE_LOG(OWSHubWorldMMO, Verbose, TEXT("ADynamicContentManager - Attempt to Spawn Interactable: %s"), *InteractableToSpawnDataTableRow->InteractableGUID.ToString());
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		UClass* ClassToSpawn = InteractableToSpawnDataTableRow->InteractableToSpawn.Get();
+		AActor* SpawnedActor = GetWorld()->SpawnActor(ClassToSpawn, &InteractableToSpawnDataTableRow->InteractableTransform, SpawnParams);
+
+		if (!SpawnedActor)
+		{
+			UE_LOG(OWSHubWorldMMO, Error, TEXT("ADynamicContentManager - Unable to Spawn Interactable: %s"), *InteractableToSpawnDataTableRow->InteractableGUID.ToString());
+		}
 	}
 }
