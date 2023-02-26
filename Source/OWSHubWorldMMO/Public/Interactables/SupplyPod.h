@@ -17,16 +17,27 @@ public:
 	// Sets default values for this actor's properties
 	ASupplyPod();
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Interactable")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, ReplicatedUsing=OnRep_InteractableGUID, Category = "Interactable")
 		FGuid InteractableGUID;
+	UFUNCTION()
+		void OnRep_InteractableGUID();
 
 	//Begin IInteractable Interface
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interactable")
 		void Interact();
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interactable")
 		FGuid GetInteractableGUID();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interactable")
+		void SetInteractableGUID(FGuid NewInteractableGUID);
 	//End IInteractable Interface
 
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interactable")
+		void SupplyPodClosed();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interactable")
+		void SupplyPodOpened();
+
+	UFUNCTION(BlueprintCallable, Category = "Interactable")
+		bool IsSupplyPodOpened();
 
 protected:
 	// Called when the game starts or when spawned

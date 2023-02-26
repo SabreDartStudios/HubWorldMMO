@@ -3,11 +3,19 @@
 
 #include "./Player/HWPlayerController.h"
 #include "Runtime/JsonUtilities/Public/JsonObjectConverter.h"
+#include "Policies/CondensedJsonPrintPolicy.h"
+#include "Serialization/JsonTypes.h"
+#include "Serialization/JsonReader.h"
+#include "Policies/PrettyJsonPrintPolicy.h"
+#include "Serialization/JsonSerializer.h"
 #include "Net/UnrealNetwork.h"
 #include "./Character/HWGASCharacter.h"
 #include "OWSGameInstance.h"
 #include "./Interactables/Interactable.h"
 #include "../OWSHubWorldMMO.h"
+
+typedef TJsonWriterFactory< TCHAR, TCondensedJsonPrintPolicy<TCHAR> > FCondensedJsonStringWriterFactory;
+typedef TJsonWriter< TCHAR, TCondensedJsonPrintPolicy<TCHAR> > FCondensedJsonStringWriter;
 
 AHWPlayerController::AHWPlayerController()
 {
@@ -209,16 +217,32 @@ void AHWPlayerController::HideLoadingScreen()
 FString AHWPlayerController::SerializeSupplyPodsOpened()
 {
 	FString SerializedSupplyPodsOpened = "";
-	if (FJsonObjectConverter::UStructToJsonObjectString(SupplyPodsOpened, SerializedSupplyPodsOpened))
+	FJsonObject ArrayJsonObject;
+	TArray<TSharedPtr<FJsonValue>> Array;
+	for (auto SupplyPodOpened : SupplyPodsOpened.SupplyPods)
 	{
-		return SerializedSupplyPodsOpened;
+		ArrayJsonObject.SetStringField("TempField", SupplyPodOpened.SupplyPodGUID.ToString());
+		Array.Add(ArrayJsonObject.GetField<EJson::String>("TempField"));
 	}
-	return "";
+	TSharedRef<FCondensedJsonStringWriter> Writer = FCondensedJsonStringWriterFactory::Create(&SerializedSupplyPodsOpened);
+	FJsonSerializer::Serialize(Array, Writer);
+
+	return SerializedSupplyPodsOpened;
 }
 
 void AHWPlayerController::LoadSupplyPodsOpenedFromJSON(FString SupplyPodsOpenedJSON)
 {
-	FJsonObjectConverter::JsonObjectStringToUStruct(SupplyPodsOpenedJSON, &SupplyPodsOpened);
+	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(SupplyPodsOpenedJSON);
+	TArray<TSharedPtr<FJsonValue>> ue4ObjectArray;
+	FJsonSerializer::Deserialize(JsonReader, ue4ObjectArray);
+
+	for (auto SupplyPodOpened : ue4ObjectArray)
+	{
+		FHWSupplyPodOpenedItem HWSupplyPodOpenedItem;
+		HWSupplyPodOpenedItem.SupplyPodGUID = FGuid(SupplyPodOpened->AsString());
+		FHWSupplyPodOpenedItem& ItemAdded = SupplyPodsOpened.SupplyPods.Add_GetRef(HWSupplyPodOpenedItem);
+		SupplyPodsOpened.MarkItemDirty(ItemAdded);
+	}
 }
 
 void AHWPlayerController::OnRep_SupplyPodsOpened()
@@ -226,8 +250,58 @@ void AHWPlayerController::OnRep_SupplyPodsOpened()
 	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - OnRep_SupplyPodsOpened Started"));
 }
 
+//Called via local input to Interact with an Interactable
+void AHWPlayerController::Interact()
+{
+	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - Interact Started"));
+
+	//Get a list of Interactables within range to interact with (InteractionRadius)
+	TArray<TWeakObjectPtr<AActor>>	OverlappedInteractables = GetOverlappedInteractables();
+
+	//If there are no OverlappedInteractables, do nothing
+	if (OverlappedInteractables.IsEmpty())
+	{
+		return;
+	}
+
+	//Figure out which one to open - For now just pick the first one in the list
+	IInteractable* InteractableSupplyPod = Cast<IInteractable>(OverlappedInteractables[0]);
+
+	//If the Supply Pod is already Open, then do nothing
+	if (IsSupplyPodOpened(InteractableSupplyPod->GetInteractableGUID()))
+	{
+		return;
+	}
+
+	InteractableSupplyPod->Interact();
+
+	//Run at Server RPC to open a Supply Pod
+	Server_OpenSupplyPod();
+}
+
+bool AHWPlayerController::IsSupplyPodOpened(FGuid SupplyPodGUID)
+{
+	auto FoundEntry = SupplyPodsOpened.SupplyPods.FindByPredicate([&](FHWSupplyPodOpenedItem& InItem)
+		{
+			return InItem.SupplyPodGUID == SupplyPodGUID;
+		});
+
+	if (FoundEntry)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+//This method is only called on the server
 void AHWPlayerController::AddSupplyPodToOpenedList(FGuid SupplyPodGUID)
 {
+	if (!HasAuthority())
+	{
+		return;
+	}
+
 	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - AddSupplyPodToOpenedList Started"));
 
 	FHWSupplyPodOpenedItem SupplyPodOpenedItemToAdd;
@@ -237,7 +311,11 @@ void AHWPlayerController::AddSupplyPodToOpenedList(FGuid SupplyPodGUID)
 	FHWSupplyPodOpenedItem& ItemAdded = SupplyPodsOpened.SupplyPods.Add_GetRef(SupplyPodOpenedItemToAdd);
 	SupplyPodsOpened.MarkItemDirty(ItemAdded);
 
+	//Serialize the array of Supply Pods Opened into a JSON String
 	FString SerializedSupplyPodsOpened = SerializeSupplyPodsOpened();
+
+	//Calls the OWS API to save SupplyPodsOpened to Custom Character Data
+	OWSPlayerControllerComponent->AddOrUpdateCustomCharacterData(GetOWSPlayerState()->GetPlayerName(), "SupplyPodsOpened", SerializedSupplyPodsOpened);
 }
 
 void AHWPlayerController::Server_OpenSupplyPod_Implementation()
@@ -258,6 +336,7 @@ void AHWPlayerController::Server_OpenSupplyPod_Implementation()
 	FGuid SupplyPodGUID = InteractableSupplyPod->GetInteractableGUID();
 
 	AddSupplyPodToOpenedList(SupplyPodGUID);
+	InteractableSupplyPod->Interact();
 }
 
 TArray<TWeakObjectPtr<AActor>> AHWPlayerController::GetOverlappedInteractables()
@@ -331,6 +410,10 @@ void AHWPlayerController::NotifyGetCustomCharacterData(TSharedPtr<FJsonObject> J
 			else if (CustomFieldName == "BaseCharacterSkills")
 			{
 				GetHWCharacter()->LoadBaseCharacterSkillsFromJSON(CustomFieldValue);
+			}
+			else if (CustomFieldName == "SupplyPodsOpened")
+			{
+				LoadSupplyPodsOpenedFromJSON(CustomFieldValue);
 			}
 		}
 

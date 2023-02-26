@@ -15,3 +15,8 @@ FGuid IInteractable::GetInteractableGUID()
 {
 	return FGuid::NewGuid();
 }
+
+void IInteractable::SetInteractableGUID(FGuid NewInteractableGUID)
+{
+
+}

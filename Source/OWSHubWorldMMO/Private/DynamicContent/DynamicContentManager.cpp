@@ -52,5 +52,12 @@ void ADynamicContentManager::SpawnInteractables()
 		{
 			UE_LOG(OWSHubWorldMMO, Error, TEXT("ADynamicContentManager - Unable to Spawn Interactable: %s"), *InteractableToSpawnDataTableRow->InteractableGUID.ToString());
 		}
+
+		//Cast to IInteractable to get access to interface methods
+		IInteractable* InteractableSupplyPod = Cast<IInteractable>(SpawnedActor);
+		if (InteractableSupplyPod)
+		{
+			InteractableSupplyPod->SetInteractableGUID(InteractableToSpawnDataTableRow->InteractableGUID);
+		}
 	}
 }

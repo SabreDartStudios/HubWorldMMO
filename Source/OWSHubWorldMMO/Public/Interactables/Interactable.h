@@ -53,4 +53,5 @@ public:
 
 	virtual void Interact();
 	virtual FGuid GetInteractableGUID();
+	virtual void SetInteractableGUID(FGuid NewInteractableGUID);
 };
