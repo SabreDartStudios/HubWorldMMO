@@ -40,9 +40,12 @@ AHWPlayerController::AHWPlayerController()
 		GGameIni
 	);
 
-	//Add initialization parts for tracking when they have all been initialized
-	InitiailzationParts.Add(FHWInitializationPart("CUSTOMCHARACTERDATA", 0.5f));
-	InitiailzationParts.Add(FHWInitializationPart("INVENTORY", 0.5f));
+	//Add initialization parts for tracking when they have all been initialized - Server Side
+	InitializationParts.Add(FHWInitializationPart("CUSTOMCHARACTERDATA", 0.5f, true));
+	InitializationParts.Add(FHWInitializationPart("PLAYERSTATE", 0.5f, true));
+	//Add initialization parts for tracking when they have all been initialized - Client Side
+	InitializationParts.Add(FHWInitializationPart("PLAYERSTATE", 0.5f, false));
+	InitializationParts.Add(FHWInitializationPart("SERVERSIDEDONE", 0.5f, false));
 
 	//Create UOWSPlayerControllerComponent and bind delegates
 	OWSPlayerControllerComponent = CreateDefaultSubobject<UOWSPlayerControllerComponent>(TEXT("OWS Player Controller Component"));
@@ -71,6 +74,13 @@ void AHWPlayerController::OnPossess(APawn* InPawn)
 	{
 		InitializeCharacterOnServerSide();
 	}
+}
+
+//This is call on the client and the server.  The client fires quite a bit later than the server side.
+void AHWPlayerController::BeginPlayingState()
+{
+	//Player State has been loaded.  Continue with additional Character initialization.
+	PartialInitializationComplete("PLAYERSTATE");
 }
 
 //Event called on the Server side when the player leaves
@@ -153,17 +163,19 @@ void AHWPlayerController::CustomCharacterDataInitializationComplete()
 	
 }
 
-//This runs on the server side to track our initialization tasks
+//This runs on the client and server to track our initialization tasks
 void AHWPlayerController::PartialInitializationComplete(FString InitializationPartNameThatIsComplete)
 {
+	bool bIsServer = HasAuthority();
+
 	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - PartialInitializationComplete Started"));
 
 	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("PartialInitializationComplete - Part: %s"), *InitializationPartNameThatIsComplete);
 
 	//Set initialization part complete
-	auto FoundPart = InitiailzationParts.FindByPredicate([&](FHWInitializationPart& InPart)
+	auto FoundPart = InitializationParts.FindByPredicate([&](FHWInitializationPart& InPart)
 	{
-		return InPart.InitializationPartName == InitializationPartNameThatIsComplete;
+		return InPart.InitializationPartName == InitializationPartNameThatIsComplete && InPart.bServerSide == bIsServer;
 	});
 	if (FoundPart)
 	{
@@ -171,10 +183,10 @@ void AHWPlayerController::PartialInitializationComplete(FString InitializationPa
 	}
 
 	//Are all the parts complete?
-	for (auto& InitializationPart : InitiailzationParts)
+	for (auto& InitializationPart : InitializationParts)
 	{
 		//If any of the parts are incomplete, then we are not done yet
-		if (!InitializationPart.bInitializationComplete)
+		if (!InitializationPart.bInitializationComplete && InitializationPart.bServerSide == bIsServer)
 		{
 			return;
 		}
@@ -184,13 +196,30 @@ void AHWPlayerController::PartialInitializationComplete(FString InitializationPa
 	ReadyToPlay();
 }
 
-//Server side Ready to Play
+//Client and Server side Ready to Play
 void AHWPlayerController::ReadyToPlay()
 {
 	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - ReadyToPlay Started"));
 
-	//RPC to the owning client to remove the loading screen and enable player input
-	OwningClient_ReadyToPlay();
+	if (HasAuthority())
+	{
+		//Call the BP implementable event
+		ReadyToPlayOnServer();
+
+		//RPC to the owning client to let it know the server side initialization tasks are done
+		OwningClient_ReadyToPlay();
+	}
+	else
+	{
+		//Hide the loading screen
+		HideLoadingScreen();
+
+		//Enable player input
+		SetInputMode(FInputModeGameOnly());
+
+		//Call the BP implementable event
+		ReadyToPlayOnClient();
+	}
 }
 
 //Owning Client side Ready to Play
@@ -198,11 +227,7 @@ void AHWPlayerController::OwningClient_ReadyToPlay_Implementation()
 {
 	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - OwningClient_ReadyToPlay Started"));
 
-	//Hide the loading screen
-	HideLoadingScreen();
-
-	//Enable player input
-	SetInputMode(FInputModeGameOnly());
+	PartialInitializationComplete("SERVERSIDEDONE");
 }
 
 
@@ -414,6 +439,18 @@ void AHWPlayerController::NotifyGetCustomCharacterData(TSharedPtr<FJsonObject> J
 			else if (CustomFieldName == "SupplyPodsOpened")
 			{
 				LoadSupplyPodsOpenedFromJSON(CustomFieldValue);
+			}
+			else if (CustomFieldName.Contains("Inventory"))
+			{
+				TInlineComponentArray<UHWInventoryComponent*> AttachedInventoryComponents;
+				GetComponents<UHWInventoryComponent>(AttachedInventoryComponents);
+				for (int32 curIndex = 0; curIndex < AttachedInventoryComponents.Num(); curIndex++)
+				{
+					if (AttachedInventoryComponents[curIndex]->InventoryName == CustomFieldName)
+					{
+						AttachedInventoryComponents[curIndex]->LoadInventoryFromJSON(CustomFieldValue);
+					}
+				}
 			}
 		}
 

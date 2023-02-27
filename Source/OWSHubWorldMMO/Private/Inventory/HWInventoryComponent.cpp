@@ -2,6 +2,7 @@
 
 
 #include "./Inventory/HWInventoryComponent.h"
+#include "./Player/HWPlayerController.h"
 #include "Runtime/JsonUtilities/Public/JsonObjectConverter.h"
 #include "Net/UnrealNetwork.h"
 #include "../OWSHubWorldMMO.h"
@@ -43,12 +44,11 @@ FGuid UHWInventoryComponent::GenerateInventoryItem()
 	return FGuid::NewGuid();
 }
 
+//Can only be called on the server
 void UHWInventoryComponent::AddItemToInventory(int32 ItemTypeID, int32 Quantity, int32 NumberOfUsesLeft, int32 Condition, FString CustomJSON)
 {
-	FGuid ItemGUID = GenerateInventoryItem();
-
 	FHWInventoryItem ItemToAdd;
-	ItemToAdd.ItemGUID = ItemGUID;
+	ItemToAdd.ItemGUID = GenerateInventoryItem();
 	ItemToAdd.ItemTypeID = ItemTypeID;
 	ItemToAdd.Quantity = Quantity;
 	ItemToAdd.NumberOfUsesLeft = NumberOfUsesLeft;
@@ -57,8 +57,42 @@ void UHWInventoryComponent::AddItemToInventory(int32 ItemTypeID, int32 Quantity,
 
 	ItemToAdd.InSlotNumber = 0;
 
+	AddItemToInventory(ItemToAdd);
+}
+
+//Can only be called on the server
+void UHWInventoryComponent::AddItemToInventory(const FHWInventoryItem& ItemToAdd)
+{
+	//If this was mistakenly called from the client, do nothing
+	if (!GetOwner()->HasAuthority())
+	{
+		return;
+	}
+
 	FHWInventoryItem& ReferenceToAddedItem = Inventory.Items.Add_GetRef(ItemToAdd);
 	Inventory.MarkItemDirty(ReferenceToAddedItem);
+}
+
+//Can only be called on the server
+void UHWInventoryComponent::PersistInventory()
+{
+	//If this was mistakenly called from the client, do nothing
+	if (!GetOwner()->HasAuthority())
+	{
+		return;
+	}
+
+	AHWPlayerController* HWPlayerController = Cast<AHWPlayerController>(GetOwner());
+	if (HWPlayerController)
+	{
+		FString PlayerName = HWPlayerController->GetOWSPlayerState()->GetPlayerName();
+		if (PlayerName.IsEmpty())
+		{
+			return;
+		}
+		FString SerializedInventory = SerializeInventory();
+		HWPlayerController->OWSPlayerControllerComponent->AddOrUpdateCustomCharacterData(PlayerName, InventoryName, SerializedInventory);
+	}
 }
 
 void UHWInventoryComponent::LoadInventoryFromJSON(FString InventoryJSON)

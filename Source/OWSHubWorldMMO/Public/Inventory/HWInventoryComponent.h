@@ -207,6 +207,9 @@ public:
 		virtual void OnRep_Inventory();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+		FString InventoryName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 		UDataTable* ItemLibrary;
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
@@ -214,6 +217,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 		void AddItemToInventory(int32 ItemTypeID, int32 Quantity, int32 NumberOfUsesLeft, int32 Condition, FString CustomJSON);
+
+		void AddItemToInventory(const FHWInventoryItem& ItemToAdd);
+
+		UFUNCTION(BlueprintCallable, Category = "Inventory")
+			void PersistInventory();
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 		void LoadInventoryFromJSON(FString InventoryJSON);

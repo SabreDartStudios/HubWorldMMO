@@ -20,13 +20,15 @@ struct FHWInitializationPart
 	{
 		InitializationPartName = "";
 		InitializationPartPercentage = 1.f;
+		bServerSide = true;
 		bInitializationComplete = false;
 	}
 
-	FHWInitializationPart(FString inInitializationPartName, float inInitializationPartPercentage)
+	FHWInitializationPart(FString inInitializationPartName, float inInitializationPartPercentage, bool inServerSide)
 	{
 		InitializationPartName = inInitializationPartName;
 		InitializationPartPercentage = inInitializationPartPercentage;
+		bServerSide = inServerSide;
 		bInitializationComplete = false;
 	}
 
@@ -35,6 +37,9 @@ struct FHWInitializationPart
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Initiailzation")
 		float InitializationPartPercentage;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Initiailzation")
+		bool bServerSide;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Initiailzation")
 		bool bInitializationComplete;
@@ -177,7 +182,7 @@ public:
 
 	//Initiailization
 	UPROPERTY(EditAnywhere, Category = "HW|Initialization")
-		TArray<FHWInitializationPart> InitiailzationParts;
+		TArray<FHWInitializationPart> InitializationParts;
 
 	//This is where Character Initialization code starts
 	void InitializeCharacterOnServerSide();
@@ -191,8 +196,14 @@ public:
 	//Called when everything has been initialized and we are ready to turn the game over to the player to play.
 	void ReadyToPlay();
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Initialization")
+		void ReadyToPlayOnServer();
+
 	UFUNCTION(Client, Reliable, Category = "Initialization")
 		void OwningClient_ReadyToPlay();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Initialization")
+		void ReadyToPlayOnClient();
 
 	//Hide the loading screen
 	void HideLoadingScreen();
@@ -253,7 +264,10 @@ public:
 	void NotifyGetCustomCharacterData(TSharedPtr<FJsonObject> JsonObject);
 	void ErrorCustomCharacterData(const FString& ErrorMsg);
 
+	
+
 protected:
 
+	virtual void BeginPlayingState() override;
 	virtual void PostProcessInput(const float DeltaTime, const bool bGamePaused) override;
 };
