@@ -19,6 +19,7 @@ void AHWCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	SetupURO();
 }
 
 // Called every frame
@@ -26,6 +27,17 @@ void AHWCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AHWCharacter::SetupURO()
+{
+	GetMesh()->AnimUpdateRateParams->bShouldUseLodMap = true;
+	GetMesh()->AnimUpdateRateParams->BaseNonRenderedUpdateRate = 4;
+	GetMesh()->AnimUpdateRateParams->LODToFrameSkipMap.Add(0, 0);
+	GetMesh()->AnimUpdateRateParams->LODToFrameSkipMap.Add(1, 1);
+	GetMesh()->AnimUpdateRateParams->LODToFrameSkipMap.Add(2, 2);
+	GetMesh()->AnimUpdateRateParams->LODToFrameSkipMap.Add(3, 3);
+	GetMesh()->AnimUpdateRateParams->MaxEvalRateForInterpolation = 10;
 }
 
 // Called to bind functionality to input

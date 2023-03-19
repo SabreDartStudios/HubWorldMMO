@@ -33,6 +33,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
 		UCombatAttributeSet* CombatAttributes;
 
+	//Calculate Combat Attributes
+	UFUNCTION(BlueprintCallable, Category = "Stats")
+		void CalculateCombatAttributes();
+
 	//Reaction Gameplay Effects
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Reaction Effects")
 		TSubclassOf<class UGameplayEffect> BurningEffect;

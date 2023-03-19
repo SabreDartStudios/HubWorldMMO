@@ -3,6 +3,9 @@
 #include "OWSPlayerControllerComponent.h"
 #include "OWSTravelToMapActor.h"
 #include "OWSGameInstance.h"
+#include "OWSAPISubsystem.h"
+#include "OWS2API.h"
+#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 
 
 // Sets default values for this component's properties
@@ -47,8 +50,31 @@ UOWSPlayerControllerComponent::UOWSPlayerControllerComponent()
 		OWSEncryptionKey,
 		GGameIni
 	);
+
+	UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(this);
+	//GameInstance will be null on Editor startup, but will have a valid refernce when playing the game
+	if (GameInstance)
+	{
+		InitializeOWSAPISubsystemOnPlayerControllerComponent();
+	}
 }
 
+void UOWSPlayerControllerComponent::InitializeOWSAPISubsystemOnPlayerControllerComponent()
+{
+	UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(this);
+	GameInstance->GetSubsystem<UOWSAPISubsystem>()->OnNotifyCreateCharacterUsingDefaultCharacterValuesDelegate.BindUObject(this, &UOWSPlayerControllerComponent::CreateCharacterUsingDefaultCharacterValuesSuccess);
+	GameInstance->GetSubsystem<UOWSAPISubsystem>()->OnErrorCreateCharacterUsingDefaultCharacterValuesDelegate.BindUObject(this, &UOWSPlayerControllerComponent::CreateCharacterUsingDefaultCharacterValuesError);
+}
+
+void UOWSPlayerControllerComponent::CreateCharacterUsingDefaultCharacterValuesSuccess()
+{
+	OnNotifyCreateCharacterUsingDefaultCharacterValuesDelegate.ExecuteIfBound();
+}
+
+void UOWSPlayerControllerComponent::CreateCharacterUsingDefaultCharacterValuesError(const FString& ErrorMsg)
+{
+	OnErrorCreateCharacterUsingDefaultCharacterValuesDelegate.ExecuteIfBound(ErrorMsg);
+}
 
 // Called when the game starts
 void UOWSPlayerControllerComponent::BeginPlay()
@@ -640,6 +666,7 @@ void UOWSPlayerControllerComponent::GetChatGroupsForPlayer()
 
 void UOWSPlayerControllerComponent::OnGetChatGroupsForPlayerResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 {
+	/*
 	if (bWasSuccessful)
 	{
 		UE_LOG(OWS, Verbose, TEXT("OnGetChatGroupsForPlayerResponseReceived Success!"));
@@ -677,6 +704,7 @@ void UOWSPlayerControllerComponent::OnGetChatGroupsForPlayerResponseReceived(FHt
 		UE_LOG(OWS, Error, TEXT("OnGetChatGroupsForPlayerResponseReceived Error accessing server!"));
 		OnErrorGetChatGroupsForPlayerDelegate.ExecuteIfBound(TEXT("OnGetChatGroupsForPlayerResponseReceived Error accessing server!"));
 	}
+	*/
 }
 
 void UOWSPlayerControllerComponent::GetCharacterStatuses()
@@ -983,6 +1011,13 @@ void UOWSPlayerControllerComponent::OnCreateCharacterResponseReceived(FHttpReque
 		UE_LOG(OWS, Error, TEXT("OnCreateCharacterResponseReceived Error accessing login server!"));
 		OnErrorCreateCharacterDelegate.ExecuteIfBound(TEXT("Unknown error connecting to server!"));
 	}
+}
+
+//Create Character Using Default Character Values
+void UOWSPlayerControllerComponent::CreateCharacterUsingDefaultCharacterValues(FString UserSessionGUID, FString CharacterName, FString DefaultSetName)
+{
+	UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(this);
+	GameInstance->GetSubsystem<UOWSAPISubsystem>()->CreateCharacterUsingDefaultCharacterValues(UserSessionGUID, CharacterName, DefaultSetName);
 }
 
 //Remove Character

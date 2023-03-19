@@ -116,6 +116,22 @@ void AHWGASCharacter::GrantAbilityKeyBind(TSubclassOf<class UGameplayAbility> Ne
 	}
 }
 
+void AHWGASCharacter::CalculateCombatAttributes()
+{
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWGASCharacter - CalculateCombatAttributes Started"));
+
+	if (!CombatAttributes)
+	{
+		UE_LOG(OWSHubWorldMMO, Error, TEXT("AHWGASCharacter - CalculateCombatAttributes - CombatAttributes is NULL!"));
+		return;
+	}
+
+	CombatAttributes->Attack.SetBaseValue(BaseCharacterStats.Strength * 10.f);
+	CombatAttributes->CritRate.SetBaseValue(BaseCharacterStats.Agility);
+	CombatAttributes->CritDamage.SetBaseValue(BaseCharacterStats.Strength + BaseCharacterStats.Agility);
+	CombatAttributes->MaxHealth.SetBaseValue(BaseCharacterStats.Constitution * 100);
+}
+
 /*
 void AHWGASCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
 {

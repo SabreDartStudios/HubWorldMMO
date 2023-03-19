@@ -32,9 +32,9 @@ public:
 		void ErrorPlayerLogout(const FString& ErrorMsg);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Login")
-		void NotifyCreateCharacter(const FCreateCharacter& CreateCharacterData);
+		void NotifyCreateCharacterUsingDefaultCharacterValues();
 	UFUNCTION(BlueprintImplementableEvent, Category = "Login")
-		void ErrorCreateCharacter(const FString& ErrorMsg);
+		void ErrorCreateCharacterUsingDefaultCharacterValues(const FString& ErrorMsg);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Character")
 		void NotifyGetCharacterDataAndCustomData(const TArray<FCustomCharacterDataStruct>& CustomCharacterData);

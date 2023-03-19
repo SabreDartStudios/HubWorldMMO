@@ -275,35 +275,6 @@ void AHWPlayerController::OnRep_SupplyPodsOpened()
 	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - OnRep_SupplyPodsOpened Started"));
 }
 
-//Called via local input to Interact with an Interactable
-void AHWPlayerController::Interact()
-{
-	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - Interact Started"));
-
-	//Get a list of Interactables within range to interact with (InteractionRadius)
-	TArray<TWeakObjectPtr<AActor>>	OverlappedInteractables = GetOverlappedInteractables();
-
-	//If there are no OverlappedInteractables, do nothing
-	if (OverlappedInteractables.IsEmpty())
-	{
-		return;
-	}
-
-	//Figure out which one to open - For now just pick the first one in the list
-	IInteractable* InteractableSupplyPod = Cast<IInteractable>(OverlappedInteractables[0]);
-
-	//If the Supply Pod is already Open, then do nothing
-	if (IsSupplyPodOpened(InteractableSupplyPod->GetInteractableGUID()))
-	{
-		return;
-	}
-
-	InteractableSupplyPod->Interact();
-
-	//Run at Server RPC to open a Supply Pod
-	Server_OpenSupplyPod();
-}
-
 bool AHWPlayerController::IsSupplyPodOpened(FGuid SupplyPodGUID)
 {
 	auto FoundEntry = SupplyPodsOpened.SupplyPods.FindByPredicate([&](FHWSupplyPodOpenedItem& InItem)
@@ -362,6 +333,36 @@ void AHWPlayerController::Server_OpenSupplyPod_Implementation()
 
 	AddSupplyPodToOpenedList(SupplyPodGUID);
 	InteractableSupplyPod->Interact();
+}
+
+
+//Called via local input to Interact with an Interactable
+void AHWPlayerController::Interact()
+{
+	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - Interact Started"));
+
+	//Get a list of Interactables within range to interact with (InteractionRadius)
+	TArray<TWeakObjectPtr<AActor>>	OverlappedInteractables = GetOverlappedInteractables();
+
+	//If there are no OverlappedInteractables, do nothing
+	if (OverlappedInteractables.IsEmpty())
+	{
+		return;
+	}
+
+	//Figure out which one to open - For now just pick the first one in the list
+	IInteractable* InteractableSupplyPod = Cast<IInteractable>(OverlappedInteractables[0]);
+
+	//If the Supply Pod is already Open, then do nothing
+	if (IsSupplyPodOpened(InteractableSupplyPod->GetInteractableGUID()))
+	{
+		return;
+	}
+
+	InteractableSupplyPod->Interact();
+
+	//Run at Server RPC to open a Supply Pod
+	Server_OpenSupplyPod();
 }
 
 TArray<TWeakObjectPtr<AActor>> AHWPlayerController::GetOverlappedInteractables()

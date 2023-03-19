@@ -24,9 +24,6 @@ void AHWGASPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	//InputComponent->BindAxis("Move Forward / Backward", this, &AHWGASPlayerCharacter::MoveForward);
-	//InputComponent->BindAxis("Move Right / Left", this, &AHWGASPlayerCharacter::MoveRight);
-
 	//Setup Input
 	if (AHWPlayerController* HWPC = GetController<AHWPlayerController>())
 	{

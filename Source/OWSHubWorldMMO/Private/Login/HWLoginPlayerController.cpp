@@ -12,9 +12,8 @@ AHWLoginPlayerController::AHWLoginPlayerController()
 	OWSPlayerControllerComponent->OnErrorGetAllCharactersDelegate.BindUObject(this, &AHWLoginPlayerController::ErrorGetAllCharacters);
 	OWSPlayerControllerComponent->OnNotifyPlayerLogoutDelegate.BindUObject(this, &AHWLoginPlayerController::NotifyPlayerLogout);
 	OWSPlayerControllerComponent->OnErrorPlayerLogoutDelegate.BindUObject(this, &AHWLoginPlayerController::ErrorPlayerLogout);
-	OWSPlayerControllerComponent->OnNotifyCreateCharacterDelegate.BindUObject(this, &AHWLoginPlayerController::NotifyCreateCharacter);
-	OWSPlayerControllerComponent->OnErrorCreateCharacterDelegate.BindUObject(this, &AHWLoginPlayerController::ErrorCreateCharacter);
-
+	OWSPlayerControllerComponent->OnNotifyCreateCharacterUsingDefaultCharacterValuesDelegate.BindUObject(this, &AHWLoginPlayerController::NotifyCreateCharacterUsingDefaultCharacterValues);
+	OWSPlayerControllerComponent->OnErrorCreateCharacterUsingDefaultCharacterValuesDelegate.BindUObject(this, &AHWLoginPlayerController::ErrorCreateCharacterUsingDefaultCharacterValues);
 
 }
 
