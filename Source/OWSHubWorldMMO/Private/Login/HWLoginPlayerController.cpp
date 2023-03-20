@@ -14,7 +14,7 @@ AHWLoginPlayerController::AHWLoginPlayerController()
 	OWSPlayerControllerComponent->OnErrorPlayerLogoutDelegate.BindUObject(this, &AHWLoginPlayerController::ErrorPlayerLogout);
 	OWSPlayerControllerComponent->OnNotifyCreateCharacterUsingDefaultCharacterValuesDelegate.BindUObject(this, &AHWLoginPlayerController::NotifyCreateCharacterUsingDefaultCharacterValues);
 	OWSPlayerControllerComponent->OnErrorCreateCharacterUsingDefaultCharacterValuesDelegate.BindUObject(this, &AHWLoginPlayerController::ErrorCreateCharacterUsingDefaultCharacterValues);
-
+	OWSPlayerControllerComponent->OnNotifyGetCharacterDataAndCustomDataDelegate.BindUObject(this, &AHWLoginPlayerController::NotifyGetCharacterDataAndCustomData2);
 }
 
 void AHWLoginPlayerController::NotifyGetCharacterDataAndCustomData2(TSharedPtr<FJsonObject> JsonObject)
