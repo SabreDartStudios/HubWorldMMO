@@ -18,6 +18,11 @@ void ASupplyPod::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	RefreshSupplyPodState();
+}
+
+void ASupplyPod::RefreshSupplyPodState()
+{
 	//Only run this on the client
 	if (!HasAuthority())
 	{
@@ -84,15 +89,7 @@ void ASupplyPod::SetInteractableGUID_Implementation(FGuid NewInteractableGUID)
 //Called on all clients when the InteractableGUID is set on the Server
 void ASupplyPod::OnRep_InteractableGUID()
 {
-	//Supply pod has been opened
-	if (IsSupplyPodOpened())
-	{
-		SupplyPodOpened();
-	}
-	else //Supply pod is still closed
-	{
-		SupplyPodClosed();
-	}
+	RefreshSupplyPodState();
 }
 
 void ASupplyPod::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const

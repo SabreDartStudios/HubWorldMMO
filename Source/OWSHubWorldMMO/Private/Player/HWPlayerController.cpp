@@ -12,6 +12,8 @@
 #include "./Character/HWGASCharacter.h"
 #include "OWSGameInstance.h"
 #include "./Interactables/Interactable.h"
+#include "./Interactables/SupplyPod.h"
+#include "Kismet/GameplayStatics.h"
 #include "../OWSHubWorldMMO.h"
 
 typedef TJsonWriterFactory< TCHAR, TCondensedJsonPrintPolicy<TCHAR> > FCondensedJsonStringWriterFactory;
@@ -242,6 +244,14 @@ void AHWPlayerController::HideLoadingScreen()
 FString AHWPlayerController::SerializeSupplyPodsOpened()
 {
 	FString SerializedSupplyPodsOpened = "";
+	if (FJsonObjectConverter::UStructToJsonObjectString(SupplyPodsOpened, SerializedSupplyPodsOpened, 0, EPropertyFlags::CPF_RepSkip))
+	{
+		return SerializedSupplyPodsOpened;
+	}
+	return "{}";
+
+	/*
+	FString SerializedSupplyPodsOpened = "";
 	FJsonObject ArrayJsonObject;
 	TArray<TSharedPtr<FJsonValue>> Array;
 	for (auto SupplyPodOpened : SupplyPodsOpened.SupplyPods)
@@ -253,26 +263,34 @@ FString AHWPlayerController::SerializeSupplyPodsOpened()
 	FJsonSerializer::Serialize(Array, Writer);
 
 	return SerializedSupplyPodsOpened;
+	*/
 }
 
 void AHWPlayerController::LoadSupplyPodsOpenedFromJSON(FString SupplyPodsOpenedJSON)
 {
-	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(SupplyPodsOpenedJSON);
-	TArray<TSharedPtr<FJsonValue>> ue4ObjectArray;
-	FJsonSerializer::Deserialize(JsonReader, ue4ObjectArray);
+	FJsonObjectConverter::JsonObjectStringToUStruct(SupplyPodsOpenedJSON, &SupplyPodsOpened);
+	SupplyPodsOpened.MarkArrayDirty();
 
-	for (auto SupplyPodOpened : ue4ObjectArray)
+	/*
+	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(SupplyPodsOpenedJSON);
+	TArray<TSharedPtr<FJsonValue>> JsonSupplyPodsArray;
+	FJsonSerializer::Deserialize(JsonReader, JsonSupplyPodsArray);
+
+	for (auto SupplyPodOpened : JsonSupplyPodsArray)
 	{
 		FHWSupplyPodOpenedItem HWSupplyPodOpenedItem;
 		HWSupplyPodOpenedItem.SupplyPodGUID = FGuid(SupplyPodOpened->AsString());
 		FHWSupplyPodOpenedItem& ItemAdded = SupplyPodsOpened.SupplyPods.Add_GetRef(HWSupplyPodOpenedItem);
 		SupplyPodsOpened.MarkItemDirty(ItemAdded);
 	}
+	*/
 }
 
 void AHWPlayerController::OnRep_SupplyPodsOpened()
 {
-	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - OnRep_SupplyPodsOpened Started"));
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - OnRep_SupplyPodsOpened Started"));
+
+	RefreshStateOfRelevantSuppplyPods();
 }
 
 bool AHWPlayerController::IsSupplyPodOpened(FGuid SupplyPodGUID)
@@ -298,7 +316,7 @@ void AHWPlayerController::AddSupplyPodToOpenedList(FGuid SupplyPodGUID)
 		return;
 	}
 
-	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - AddSupplyPodToOpenedList Started"));
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - AddSupplyPodToOpenedList Started"));
 
 	FHWSupplyPodOpenedItem SupplyPodOpenedItemToAdd;
 
@@ -316,7 +334,7 @@ void AHWPlayerController::AddSupplyPodToOpenedList(FGuid SupplyPodGUID)
 
 void AHWPlayerController::Server_OpenSupplyPod_Implementation()
 {
-	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - Server_OpenSupplyPod Started"));
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - Server_OpenSupplyPod Started"));
 
 	//Get a list of Interactables within range to interact with (InteractionRadius)
 	TArray<TWeakObjectPtr<AActor>>	OverlappedInteractables = GetOverlappedInteractables();
@@ -335,11 +353,28 @@ void AHWPlayerController::Server_OpenSupplyPod_Implementation()
 	InteractableSupplyPod->Interact();
 }
 
+void AHWPlayerController::RefreshStateOfRelevantSuppplyPods()
+{
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - RefreshStateOfRelevantSuppplyPods Started"));
+
+	TArray<AActor*> NetworkRelevantSupplyPodsActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASupplyPod::StaticClass(), NetworkRelevantSupplyPodsActors);
+
+	for (AActor* NetworkRelevantSupplyPodActor : NetworkRelevantSupplyPodsActors)
+	{
+		ASupplyPod* NetworkRelevantSupplyPod = Cast<ASupplyPod>(NetworkRelevantSupplyPodActor);
+		if (NetworkRelevantSupplyPod)
+		{
+			NetworkRelevantSupplyPod->RefreshSupplyPodState();
+			UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - Refreshed State of Supply Pod: %s"), *NetworkRelevantSupplyPod->GetInteractableGUID().ToString());
+		}
+	}
+}
 
 //Called via local input to Interact with an Interactable
 void AHWPlayerController::Interact()
 {
-	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - Interact Started"));
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - Interact Started"));
 
 	//Get a list of Interactables within range to interact with (InteractionRadius)
 	TArray<TWeakObjectPtr<AActor>>	OverlappedInteractables = GetOverlappedInteractables();

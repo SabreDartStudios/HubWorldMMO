@@ -17,7 +17,10 @@ public:
 	// Sets default values for this actor's properties
 	ASupplyPod();
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, ReplicatedUsing=OnRep_InteractableGUID, Category = "Interactable")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Interactable")
+		int32 LootTableID;
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_InteractableGUID, Category = "Interactable")
 		FGuid InteractableGUID;
 	UFUNCTION()
 		void OnRep_InteractableGUID();
@@ -31,6 +34,7 @@ public:
 		void SetInteractableGUID(FGuid NewInteractableGUID);
 	//End IInteractable Interface
 
+
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interactable")
 		void SupplyPodClosed();
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interactable")
@@ -38,6 +42,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Interactable")
 		bool IsSupplyPodOpened();
+
+	void RefreshSupplyPodState();
 
 protected:
 	// Called when the game starts or when spawned

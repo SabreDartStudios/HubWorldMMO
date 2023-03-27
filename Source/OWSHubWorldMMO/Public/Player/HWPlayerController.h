@@ -16,7 +16,7 @@ struct FHWInitializationPart
 {
 	GENERATED_USTRUCT_BODY()
 
-		FHWInitializationPart()
+	FHWInitializationPart()
 	{
 		InitializationPartName = "";
 		InitializationPartPercentage = 1.f;
@@ -136,6 +136,8 @@ public:
 
 	UFUNCTION()
 		virtual void OnRep_SupplyPodsOpened();
+
+	void RefreshStateOfRelevantSuppplyPods();
 
 	// Serialize Base Character Stats to an FString
 	UFUNCTION(BlueprintCallable, Category = "HW|Persistence")

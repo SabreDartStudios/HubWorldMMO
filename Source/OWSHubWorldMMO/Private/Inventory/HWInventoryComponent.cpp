@@ -4,8 +4,17 @@
 #include "./Inventory/HWInventoryComponent.h"
 #include "./Player/HWPlayerController.h"
 #include "Runtime/JsonUtilities/Public/JsonObjectConverter.h"
+#include "Policies/CondensedJsonPrintPolicy.h"
+#include "Serialization/JsonTypes.h"
+#include "Serialization/JsonReader.h"
+#include "Policies/PrettyJsonPrintPolicy.h"
+#include "Serialization/JsonSerializer.h"
+
 #include "Net/UnrealNetwork.h"
 #include "../OWSHubWorldMMO.h"
+
+typedef TJsonWriterFactory< TCHAR, TCondensedJsonPrintPolicy<TCHAR> > FCondensedJsonStringWriterFactory;
+typedef TJsonWriter< TCHAR, TCondensedJsonPrintPolicy<TCHAR> > FCondensedJsonStringWriter;
 
 // Sets default values for this component's properties
 UHWInventoryComponent::UHWInventoryComponent()
@@ -98,16 +107,17 @@ void UHWInventoryComponent::PersistInventory()
 void UHWInventoryComponent::LoadInventoryFromJSON(FString InventoryJSON)
 {
 	FJsonObjectConverter::JsonObjectStringToUStruct(InventoryJSON, &Inventory);
+	Inventory.MarkArrayDirty();
 }
 
 FString UHWInventoryComponent::SerializeInventory()
 {
 	FString SerializedInventory = "";
-	if (FJsonObjectConverter::UStructToJsonObjectString(Inventory, SerializedInventory))
+	if (FJsonObjectConverter::UStructToJsonObjectString(Inventory, SerializedInventory, 0, EPropertyFlags::CPF_RepSkip))
 	{
 		return SerializedInventory;
 	}
-	return "";
+	return "{}";
 }
 
 const FHWInventoryItem& UHWInventoryComponent::FindItemInInventoryWithRoomInStack(int32 ItemTypeID, int32 SpaceNeeded)
