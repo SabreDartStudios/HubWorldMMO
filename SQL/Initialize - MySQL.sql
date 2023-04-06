@@ -1,3 +1,5 @@
+DELIMITER //
+
 SET @CustomerGUID = '';
 
 SET @CountOfHubWorldMaps = 0;
@@ -38,3 +40,5 @@ IF @CountOfDefaultCharacterValues < 1 THEN
     INSERT INTO DefaultCustomCharacterData (CustomerGUID, DefaultCharacterValuesID, CustomFieldName, FieldValue)
     VALUES (@CustomerGUID, @DefaultCharacterValuesID, 'BagInventory', '{   "items":  }');
 END IF;
+
+// DELIMITER ;
