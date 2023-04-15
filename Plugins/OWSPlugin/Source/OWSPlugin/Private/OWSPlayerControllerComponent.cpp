@@ -667,7 +667,43 @@ void UOWSPlayerControllerComponent::GetChatGroupsForPlayer()
 
 void UOWSPlayerControllerComponent::OnGetChatGroupsForPlayerResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 {
-	
+	if (bWasSuccessful)
+	{
+		UE_LOG(OWS, Verbose, TEXT("OnGetChatGroupsForPlayerResponseReceived Success!"));
+
+		TSharedPtr<FJsonObject> JsonObject;
+		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
+
+		if (FJsonSerializer::Deserialize(Reader, JsonObject))
+		{
+			if (JsonObject->GetStringField("success") == "true")
+			{
+				TArray<TSharedPtr<FJsonValue>> Rows = JsonObject->GetArrayField("rows");
+
+				TArray<FChatGroup> ChatGroups;
+
+				for (int RowNum = 0; RowNum != Rows.Num(); RowNum++) {
+					FChatGroup tempChatGroup;
+					TSharedPtr<FJsonObject> tempRow = Rows[RowNum]->AsObject();
+					tempChatGroup.ChatGroupID = tempRow->GetIntegerField("ChatGroupID");
+					tempChatGroup.ChatGroupName = tempRow->GetStringField("ChatGroupName");
+
+					ChatGroups.Add(tempChatGroup);
+				}
+
+				OnNotifyGetChatGroupsForPlayerDelegate.ExecuteIfBound(ChatGroups);
+			}
+		}
+		else
+		{
+			UE_LOG(OWS, Warning, TEXT("OnGetChatGroupsForPlayerResponseReceived:  Either there were no chat groups or the JSON failed to Deserialize!"));
+		}
+	}
+	else
+	{
+		UE_LOG(OWS, Error, TEXT("OnGetChatGroupsForPlayerResponseReceived Error accessing server!"));
+		OnErrorGetChatGroupsForPlayerDelegate.ExecuteIfBound(TEXT("OnGetChatGroupsForPlayerResponseReceived Error accessing server!"));
+	}
 }
 
 void UOWSPlayerControllerComponent::GetCharacterStatuses()

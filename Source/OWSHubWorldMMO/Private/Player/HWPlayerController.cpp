@@ -72,6 +72,9 @@ void AHWPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - OnPossess Started"));
+
+	//This check is only for documentation purposes as OnPossess only fires on the server side
 	if (HasAuthority())
 	{
 		InitializeCharacterOnServerSide();
@@ -81,6 +84,8 @@ void AHWPlayerController::OnPossess(APawn* InPawn)
 //This is call on the client and the server.  The client fires quite a bit later than the server side.
 void AHWPlayerController::BeginPlayingState()
 {
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - BeginPlayingState Started"));
+
 	//Player State has been loaded.  Continue with additional Character initialization.
 	PartialInitializationComplete("PLAYERSTATE");
 }
@@ -88,7 +93,7 @@ void AHWPlayerController::BeginPlayingState()
 //Event called on the Server side when the player leaves
 void AHWPlayerController::PawnLeavingGame()
 {
-	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - PawnLeavingGame Started"));
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - PawnLeavingGame Started"));
 
 	Super::PawnLeavingGame();
 }
@@ -150,7 +155,7 @@ void AHWPlayerController::PlayerLogout()
 
 void AHWPlayerController::InitializeCharacterOnServerSide()
 {
-	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - InitializeCharacterOnServerSide Started"));
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - InitializeCharacterOnServerSide Started"));
 
 	//Make an async call to get the custom character data for this character.  NotifyGetCustomCharacterData will handle processing the data returned.
 	OWSPlayerControllerComponent->GetCustomCharacterData(GetOWSPlayerState()->GetPlayerName());
@@ -160,7 +165,7 @@ void AHWPlayerController::InitializeCharacterOnServerSide()
 
 void AHWPlayerController::CustomCharacterDataInitializationComplete()
 {
-	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - CustomCharacterDataInitializationComplete Started"));
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - CustomCharacterDataInitializationComplete Started"));
 
 	
 }
@@ -170,7 +175,7 @@ void AHWPlayerController::PartialInitializationComplete(FString InitializationPa
 {
 	bool bIsServer = HasAuthority();
 
-	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - PartialInitializationComplete Started"));
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - PartialInitializationComplete Started"));
 
 	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("PartialInitializationComplete - Part: %s"), *InitializationPartNameThatIsComplete);
 
@@ -201,7 +206,7 @@ void AHWPlayerController::PartialInitializationComplete(FString InitializationPa
 //Client and Server side Ready to Play
 void AHWPlayerController::ReadyToPlay()
 {
-	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - ReadyToPlay Started"));
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - ReadyToPlay Started"));
 
 	if (HasAuthority())
 	{
@@ -227,7 +232,7 @@ void AHWPlayerController::ReadyToPlay()
 //Owning Client side Ready to Play
 void AHWPlayerController::OwningClient_ReadyToPlay_Implementation()
 {
-	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - OwningClient_ReadyToPlay Started"));
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - OwningClient_ReadyToPlay Started"));
 
 	PartialInitializationComplete("SERVERSIDEDONE");
 }
@@ -235,7 +240,7 @@ void AHWPlayerController::OwningClient_ReadyToPlay_Implementation()
 
 void AHWPlayerController::HideLoadingScreen()
 {
-	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - HideLoadingScreen Started"));
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - HideLoadingScreen Started"));
 
 }
 

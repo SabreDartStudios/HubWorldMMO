@@ -43,6 +43,8 @@ void AHWGASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWGASCharacter - SetupPlayerInputComponent Started"));
+
 	//AbilitySystem->RegisterGenericGameplayTagEvent().AddUObject(this, &AOWSCharacterWithAbilities::OnGameplayEffectTagCountChanged);
 
 	//Register Cooldown tag event for the client-side only.  This is for UI updates.
@@ -53,6 +55,8 @@ void AHWGASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 void AHWGASCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
+
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWGASCharacter - PossessedBy Started"));
 
 	//Initialize our abilities
 	if (AbilitySystem)
@@ -66,6 +70,8 @@ void AHWGASCharacter::PossessedBy(AController* NewController)
 void AHWGASCharacter::OnRep_Controller()
 {
 	Super::OnRep_Controller();
+
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWGASCharacter - OnRep_Controller Started"));
 
 	// Our controller changed, must update ActorInfo on AbilitySystemComponent
 	if (AbilitySystem)

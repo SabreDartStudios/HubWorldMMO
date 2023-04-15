@@ -24,6 +24,8 @@ void AHWGASPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWGASPlayerCharacter - SetupPlayerInputComponent Started"));
+
 	//Setup Input
 	if (AHWPlayerController* HWPC = GetController<AHWPlayerController>())
 	{
@@ -43,7 +45,7 @@ void AHWGASPlayerCharacter::PossessedBy(AController* NewController)
 	{
 		if (AbilitySet)
 		{
-			UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWGASPlayerCharacter - PossessedBy AbilitySet Granted"));
+			UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWGASPlayerCharacter - PossessedBy AbilitySet Granted"));
 			AbilitySet->GiveToAbilitySystem(GetHWAbilitySystemComponent(), nullptr);
 		}
 	}
@@ -51,7 +53,7 @@ void AHWGASPlayerCharacter::PossessedBy(AController* NewController)
 
 void AHWGASPlayerCharacter::InitializePlayerInput(UInputComponent* PlayerInputComponent)
 {
-	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWGASPlayerCharacter - InitializePlayerInput Started"));
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWGASPlayerCharacter - InitializePlayerInput Started"));
 
 	const FHWGameplayTags& GameplayTags = FHWGameplayTags::Get();
 	
@@ -95,7 +97,7 @@ void AHWGASPlayerCharacter::InitializePlayerInput(UInputComponent* PlayerInputCo
 
 void AHWGASPlayerCharacter::AbilitySystemInitialized()
 {
-	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWGASPlayerCharacter - AbilitySystemInitialized Started"));
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWGASPlayerCharacter - AbilitySystemInitialized Started"));
 
 	//If there is an Ability Tag Relationship Mapping
 	if (AbilitySystem && AbilityTagRelationshipMapping)

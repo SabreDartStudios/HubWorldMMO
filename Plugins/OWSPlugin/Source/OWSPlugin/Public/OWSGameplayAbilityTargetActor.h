@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbilityTargetActor.h"
-#include "OWSGameplayAbilityTargetDataFilter.h"
+#include "OWSGameplayAbilityTargetDatafilter.h"
 #include "OWSGameplayAbilityTargetActor.generated.h"
 
 /**
