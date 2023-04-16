@@ -1,0 +1,11 @@
+remote_theme: just-the-docs/just-the-docs
+logo: "/assets/images/HubWorldMMOLogo01.png"
+title: Hub World MMO
+baseurl: ""
+repository: SabreDartStudios/HubWorldMMO
+url: "http://hubworldmmo.com/"
+github_username:  SabreDartStudios
+
+aux_links:
+  "GitHub":
+    - "//github.com/SabreDartStudios/HubWorldMMO"
