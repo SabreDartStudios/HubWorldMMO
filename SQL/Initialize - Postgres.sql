@@ -32,7 +32,7 @@ BEGIN
     IF _CountOfDefaultCharacterValues < 1 THEN
 
         INSERT INTO DefaultCharacterValues (CustomerGUID, DefaultSetName, StartingMapName, X, Y, Z, RX, RY, RZ)
-        VALUES (_CustomerGUID, 'Default', 'HubWorldMap', 1510, -160, 100, 0, 0, 0);
+        VALUES (_CustomerGUID, 'Default', 'HubWorld', 1510, -160, 100, 0, 0, 0);
 
         _DefaultCharacterValuesID := CURRVAL(PG_GET_SERIAL_SEQUENCE('defaultcharactervalues', 'defaultcharactervaluesid'));
 

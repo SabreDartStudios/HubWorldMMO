@@ -22,7 +22,7 @@ IF (@CountOfDefaultCharacterValues < 1)
 BEGIN
 
 INSERT INTO DefaultCharacterValues (CustomerGUID, DefaultSetName, StartingMapName, X, Y, Z, RX, RY, RZ)
-VALUES (@CustomerGUID, 'Default', 'HubWorldMap', 1510, -160, 100, 0, 0, 0)
+VALUES (@CustomerGUID, 'Default', 'HubWorld', 1510, -160, 100, 0, 0, 0)
 
 SELECT @DefaultCharacterValuesID=SCOPE_IDENTITY()
 
