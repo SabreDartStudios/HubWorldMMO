@@ -34,7 +34,7 @@ void UHWInputComponent::AddInputMappings(const UHWInputConfig* InputConfig, UEnh
 		{
 			if (Pair.Key != NAME_None && Pair.Value.IsValid())
 			{
-				InputSubsystem->AddPlayerMappedKey(Pair.Key, Pair.Value);
+				InputSubsystem->AddPlayerMappedKeyInSlot(Pair.Key, Pair.Value);
 			}
 		}
 	}
@@ -60,7 +60,7 @@ void UHWInputComponent::RemoveInputMappings(const UHWInputConfig* InputConfig, U
 		// Clear any player mapped keys from enhanced input
 		for (const TPair<FName, FKey>& Pair : LocalSettings->GetCustomPlayerInputConfig())
 		{
-			InputSubsystem->RemovePlayerMappedKey(Pair.Key);
+			InputSubsystem->RemovePlayerMappedKeyInSlot(Pair.Key);
 		}
 	}
 }

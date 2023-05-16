@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputActionValue.h"
 #include "HWGASCharacter.h"
 #include "./AbilitySystem/HWAbilitySystemComponent.h"
 #include "./Input/HWInputConfig.h"

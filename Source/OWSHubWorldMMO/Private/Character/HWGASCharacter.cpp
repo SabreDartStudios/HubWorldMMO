@@ -132,10 +132,10 @@ void AHWGASCharacter::CalculateCombatAttributes()
 		return;
 	}
 
-	CombatAttributes->Attack.SetBaseValue(BaseCharacterStats.Strength * 10.f);
-	CombatAttributes->CritRate.SetBaseValue(BaseCharacterStats.Agility);
-	CombatAttributes->CritDamage.SetBaseValue(BaseCharacterStats.Strength + BaseCharacterStats.Agility);
-	CombatAttributes->MaxHealth.SetBaseValue(BaseCharacterStats.Constitution * 100);
+	CombatAttributes->HWSetAttack(BaseCharacterStats.Strength * 10.f);
+	CombatAttributes->HWSetCritRate(BaseCharacterStats.Agility);
+	CombatAttributes->HWSetCritDamage(BaseCharacterStats.Strength + BaseCharacterStats.Agility);
+	CombatAttributes->HWSetMaxHealth(BaseCharacterStats.Constitution * 100);
 }
 
 /*
