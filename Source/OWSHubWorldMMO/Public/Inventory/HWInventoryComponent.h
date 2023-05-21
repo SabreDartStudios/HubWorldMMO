@@ -6,7 +6,8 @@
 #include "Components/ActorComponent.h"
 #include "Engine/DataTable.h"
 #include "UObject/UnrealType.h"
-#include "Engine/NetSerialization.h"
+//#include "Engine/NetSerialization.h"
+#include "Net/Serialization/FastArraySerializer.h"
 #include "HWInventoryComponent.generated.h"
 
 //Row definition for the InventoryLibrary Data Table
