@@ -10,7 +10,7 @@
 AHWGASPlayerCharacter::AHWGASPlayerCharacter()
 {
 	//For players we will use Mixed mode to replicate GE's to the owning client
-	AbilitySystem->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+	GetAbilitySystemComponent()->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 
 	OnAbilitySystemInitialized.AddUObject(this, &AHWGASPlayerCharacter::AbilitySystemInitialized);
 }
@@ -100,9 +100,9 @@ void AHWGASPlayerCharacter::AbilitySystemInitialized()
 	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWGASPlayerCharacter - AbilitySystemInitialized Started"));
 
 	//If there is an Ability Tag Relationship Mapping
-	if (AbilitySystem && AbilityTagRelationshipMapping)
+	if (GetHWAbilitySystemComponent() && AbilityTagRelationshipMapping)
 	{
-		AbilitySystem->SetTagRelationshipMapping(AbilityTagRelationshipMapping);
+		GetHWAbilitySystemComponent()->SetTagRelationshipMapping(AbilityTagRelationshipMapping);
 	}
 }
 

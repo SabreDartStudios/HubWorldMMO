@@ -19,7 +19,7 @@ AHWGASCharacter::AHWGASCharacter()
 	AbilitySystem = CreateDefaultSubobject<UHWAbilitySystemComponent>(AHWGASCharacter::AbilitySystemComponentName);
 	AbilitySystem->SetIsReplicated(true);
 
-	CombatAttributes = CreateDefaultSubobject<UCombatAttributeSet>(TEXT("CombatAttributeSet"));
+	CombatAttributes = CreateDefaultSubobject<UHWCombatAttributeSet>(TEXT("CombatAttributeSet"));
 }
 
 // Called when the game starts or when spawned

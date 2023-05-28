@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h" 
-#include "./AbilitySystem/CombatAttributeSet.h" 
+#include "./AbilitySystem/HWCombatAttributeSet.h" 
 #include "./Character/HWCharacter.h"
 #include "./Player/HWPlayerController.h"
 #include "./UI/HWHUD.h"
@@ -27,12 +27,6 @@ public:
 
 	static FName AbilitySystemComponentName;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
-		TObjectPtr<UHWAbilitySystemComponent> AbilitySystem;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
-		UCombatAttributeSet* CombatAttributes;
-
 	//Calculate Combat Attributes
 	UFUNCTION(BlueprintCallable, Category = "Stats")
 		void CalculateCombatAttributes();
@@ -50,12 +44,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Reaction Effects")
 		TSubclassOf<class UGameplayEffect> ChargedEffect;
 
-	UAbilitySystemComponent* GetAbilitySystemComponent() const override
+	FORCEINLINE virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override
 	{
 		return (UAbilitySystemComponent*)AbilitySystem;
 	};
 
-	UHWAbilitySystemComponent* GetHWAbilitySystemComponent() const
+	FORCEINLINE UHWAbilitySystemComponent* GetHWAbilitySystemComponent() const
 	{
 		return AbilitySystem;
 	};
@@ -102,4 +96,11 @@ public:
 protected:
 
 	FSimpleMulticastDelegate OnAbilitySystemInitialized;
+
+private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
+		TObjectPtr<UHWAbilitySystemComponent> AbilitySystem;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
+		UHWCombatAttributeSet* CombatAttributes;
 };

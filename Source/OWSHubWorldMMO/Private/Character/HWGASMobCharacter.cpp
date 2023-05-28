@@ -11,5 +11,5 @@
 AHWGASMobCharacter::AHWGASMobCharacter()
 {
 	//Since this is for AI we will override this to Minimal mode
-	AbilitySystem->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
+	GetAbilitySystemComponent()->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 }

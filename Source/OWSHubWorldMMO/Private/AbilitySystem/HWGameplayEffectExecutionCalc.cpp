@@ -2,7 +2,7 @@
 
 
 #include "./AbilitySystem/HWGameplayEffectExecutionCalc.h"
-#include "./AbilitySystem/CombatAttributeSet.h"
+#include "./AbilitySystem/HWCombatAttributeSet.h"
 
 struct HWDamageStatics
 {
@@ -16,17 +16,17 @@ struct HWDamageStatics
 	HWDamageStatics()
 	{
 		//Snapshot Damage
-		DEFINE_ATTRIBUTE_CAPTUREDEF(UCombatAttributeSet, Damage, Source, true);
+		DEFINE_ATTRIBUTE_CAPTUREDEF(UHWCombatAttributeSet, Damage, Source, true);
 		//Snapshot Strength
-		DEFINE_ATTRIBUTE_CAPTUREDEF(UCombatAttributeSet, Strength, Source, true);
+		DEFINE_ATTRIBUTE_CAPTUREDEF(UHWCombatAttributeSet, Strength, Source, true);
 		//Snapshot Attack
-		DEFINE_ATTRIBUTE_CAPTUREDEF(UCombatAttributeSet, Attack, Source, true);
+		DEFINE_ATTRIBUTE_CAPTUREDEF(UHWCombatAttributeSet, Attack, Source, true);
 		//Snapshot CritRate
-		DEFINE_ATTRIBUTE_CAPTUREDEF(UCombatAttributeSet, CritRate, Source, true);
+		DEFINE_ATTRIBUTE_CAPTUREDEF(UHWCombatAttributeSet, CritRate, Source, true);
 		//Snapshot CritDamage
-		DEFINE_ATTRIBUTE_CAPTUREDEF(UCombatAttributeSet, CritDamage, Source, true);
+		DEFINE_ATTRIBUTE_CAPTUREDEF(UHWCombatAttributeSet, CritDamage, Source, true);
 		//Snapshot CritHitDamage
-		DEFINE_ATTRIBUTE_CAPTUREDEF(UCombatAttributeSet, CritHitDamage, Source, true);
+		DEFINE_ATTRIBUTE_CAPTUREDEF(UHWCombatAttributeSet, CritHitDamage, Source, true);
 	}
 };
 
