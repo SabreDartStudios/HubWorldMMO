@@ -6,27 +6,21 @@
 
 struct HWDamageStatics
 {
-	DECLARE_ATTRIBUTE_CAPTUREDEF(Damage);
-	DECLARE_ATTRIBUTE_CAPTUREDEF(Strength);
-	DECLARE_ATTRIBUTE_CAPTUREDEF(Attack);
-	DECLARE_ATTRIBUTE_CAPTUREDEF(CritRate);
-	DECLARE_ATTRIBUTE_CAPTUREDEF(CritDamage);
-	DECLARE_ATTRIBUTE_CAPTUREDEF(CritHitDamage);
+	FGameplayEffectAttributeCaptureDefinition DamageDef;
+	FGameplayEffectAttributeCaptureDefinition StrengthDef;
+	FGameplayEffectAttributeCaptureDefinition AttackDef;
+	FGameplayEffectAttributeCaptureDefinition CritRateDef;
+	FGameplayEffectAttributeCaptureDefinition CritDamageDef;
+	FGameplayEffectAttributeCaptureDefinition CritHitDamageDef;
 
 	HWDamageStatics()
 	{
-		//Snapshot Damage
-		DEFINE_ATTRIBUTE_CAPTUREDEF(UHWCombatAttributeSet, Damage, Source, true);
-		//Snapshot Strength
-		DEFINE_ATTRIBUTE_CAPTUREDEF(UHWCombatAttributeSet, Strength, Source, true);
-		//Snapshot Attack
-		DEFINE_ATTRIBUTE_CAPTUREDEF(UHWCombatAttributeSet, Attack, Source, true);
-		//Snapshot CritRate
-		DEFINE_ATTRIBUTE_CAPTUREDEF(UHWCombatAttributeSet, CritRate, Source, true);
-		//Snapshot CritDamage
-		DEFINE_ATTRIBUTE_CAPTUREDEF(UHWCombatAttributeSet, CritDamage, Source, true);
-		//Snapshot CritHitDamage
-		DEFINE_ATTRIBUTE_CAPTUREDEF(UHWCombatAttributeSet, CritHitDamage, Source, true);
+		DamageDef = FGameplayEffectAttributeCaptureDefinition(UHWCombatAttributeSet::GetDamageAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
+		StrengthDef = FGameplayEffectAttributeCaptureDefinition(UHWCombatAttributeSet::GetStrengthAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
+		AttackDef = FGameplayEffectAttributeCaptureDefinition(UHWCombatAttributeSet::GetAttackAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
+		CritRateDef = FGameplayEffectAttributeCaptureDefinition(UHWCombatAttributeSet::GetCritRateAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
+		CritDamageDef = FGameplayEffectAttributeCaptureDefinition(UHWCombatAttributeSet::GetCritDamageAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
+		CritHitDamageDef = FGameplayEffectAttributeCaptureDefinition(UHWCombatAttributeSet::GetCritHitDamageAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
 	}
 };
 
@@ -97,11 +91,11 @@ void UHWGameplayEffectExecutionCalc::Execute_Implementation(const FGameplayEffec
 	float AttackerSideCalculatedCritHitDamage = (bWasACrit ? BaseDamage * CritDamage : 0.f);
 	if (AttackerSideCalculatedDamage > 0.f)
 	{
-		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(DamageStatics().DamageProperty, EGameplayModOp::Additive, AttackerSideCalculatedDamage));
+		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UHWCombatAttributeSet::GetDamageAttribute(), EGameplayModOp::Additive, AttackerSideCalculatedDamage));
 	}
 	//The critical hit damage is separated from the normal damage and applied on the CritHitDamage modifier.  This will allow our PreGameplayEffectExecute to handle it differently.
 	if (AttackerSideCalculatedCritHitDamage > 0.f)
 	{
-		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(DamageStatics().CritHitDamageProperty, EGameplayModOp::Override, AttackerSideCalculatedCritHitDamage));
+		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UHWCombatAttributeSet::GetCritHitDamageAttribute(), EGameplayModOp::Override, AttackerSideCalculatedCritHitDamage));
 	}
 }
