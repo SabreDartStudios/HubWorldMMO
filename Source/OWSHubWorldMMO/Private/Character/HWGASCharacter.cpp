@@ -126,16 +126,18 @@ void AHWGASCharacter::CalculateCombatAttributes()
 {
 	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWGASCharacter - CalculateCombatAttributes Started"));
 
-	if (!CombatAttributes)
+	UHWCombatAttributeSet* HWCombatAttributeSet = (UHWCombatAttributeSet*)AbilitySystem->GetAttributeSet(UHWCombatAttributeSet::StaticClass());
+
+	if (!HWCombatAttributeSet)
 	{
 		UE_LOG(OWSHubWorldMMO, Error, TEXT("AHWGASCharacter - CalculateCombatAttributes - CombatAttributes is NULL!"));
 		return;
 	}
 
-	CombatAttributes->HWSetAttack(BaseCharacterStats.Strength * 10.f);
-	CombatAttributes->HWSetCritRate(BaseCharacterStats.Agility);
-	CombatAttributes->HWSetCritDamage(BaseCharacterStats.Strength + BaseCharacterStats.Agility);
-	CombatAttributes->HWSetMaxHealth(BaseCharacterStats.Constitution * 100);
+	HWCombatAttributeSet->HWSetAttack(BaseCharacterStats.Strength * 10.f);
+	HWCombatAttributeSet->HWSetCritRate(BaseCharacterStats.Agility);
+	HWCombatAttributeSet->HWSetCritDamage(BaseCharacterStats.Strength + BaseCharacterStats.Agility);
+	HWCombatAttributeSet->HWSetMaxHealth(BaseCharacterStats.Constitution * 100);
 }
 
 /*

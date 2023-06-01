@@ -43,8 +43,9 @@ AHWPlayerController::AHWPlayerController()
 	);
 
 	//Add initialization parts for tracking when they have all been initialized - Server Side
+	InitializationParts.Add(FHWInitializationPart("GAS", 0.25f, true));
 	InitializationParts.Add(FHWInitializationPart("CUSTOMCHARACTERDATA", 0.5f, true));
-	InitializationParts.Add(FHWInitializationPart("PLAYERSTATE", 0.5f, true));
+	InitializationParts.Add(FHWInitializationPart("PLAYERSTATE", 0.25f, true));
 	//Add initialization parts for tracking when they have all been initialized - Client Side
 	InitializationParts.Add(FHWInitializationPart("PLAYERSTATE", 0.5f, false));
 	InitializationParts.Add(FHWInitializationPart("SERVERSIDEDONE", 0.5f, false));
@@ -72,7 +73,7 @@ void AHWPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
-	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - OnPossess Started"));
+	UE_LOG(OWSHubWorldMMO, Warning, TEXT("AHWPlayerController - OnPossess Started"));
 
 	//This check is only for documentation purposes as OnPossess only fires on the server side
 	if (HasAuthority())
@@ -99,9 +100,9 @@ void AHWPlayerController::PawnLeavingGame()
 }
 
 //Get a reference to the HWCharacter this Player Controller controls
-AHWCharacter* AHWPlayerController::GetHWCharacter() const
+AHWGASPlayerCharacter* AHWPlayerController::GetHWGASPlayerCharacter() const
 {
-	return Cast<AHWCharacter>(GetPawn());
+	return Cast<AHWGASPlayerCharacter>(GetPawn());
 }
 
 //Get a reference to the OWSPlayerState for this Player Controller
@@ -112,7 +113,7 @@ AOWSPlayerState* AHWPlayerController::GetOWSPlayerState() const
 
 UHWAbilitySystemComponent* AHWPlayerController::GetHWAbilitySystemComponent() const
 {
-	const AHWGASCharacter* GASCharacter = Cast<AHWGASCharacter>(GetHWCharacter());
+	const AHWGASCharacter* GASCharacter = Cast<AHWGASCharacter>(GetHWGASPlayerCharacter());
 	return (GASCharacter ? GASCharacter->GetHWAbilitySystemComponent() : nullptr);
 }
 
@@ -159,15 +160,14 @@ void AHWPlayerController::InitializeCharacterOnServerSide()
 
 	//Make an async call to get the custom character data for this character.  NotifyGetCustomCharacterData will handle processing the data returned.
 	OWSPlayerControllerComponent->GetCustomCharacterData(GetOWSPlayerState()->GetPlayerName());
-
-
 }
 
 void AHWPlayerController::CustomCharacterDataInitializationComplete()
 {
 	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - CustomCharacterDataInitializationComplete Started"));
 
-	
+	//Calculate Combat Attributes
+	GetHWGASPlayerCharacter()->CalculateCombatAttributes();
 }
 
 //This runs on the client and server to track our initialization tasks
@@ -188,6 +188,8 @@ void AHWPlayerController::PartialInitializationComplete(FString InitializationPa
 	{
 		FoundPart->bInitializationComplete = true;
 	}
+
+	//Cascading Events
 
 	//Are all the parts complete?
 	for (auto& InitializationPart : InitializationParts)
@@ -408,7 +410,7 @@ void AHWPlayerController::Interact()
 TArray<TWeakObjectPtr<AActor>> AHWPlayerController::GetOverlappedInteractables()
 {
 	//Get character transform
-	FTransform CharacterTransform = GetHWCharacter()->GetActorTransform();
+	FTransform CharacterTransform = GetHWGASPlayerCharacter()->GetActorTransform();
 
 	//Sphere trace for Interactables by first scanning in a sphere around the character for WorldDynamic actors within InteractionRadius range
 	TArray<FOverlapResult> Overlaps;
@@ -424,7 +426,7 @@ TArray<TWeakObjectPtr<AActor>> AHWPlayerController::GetOverlappedInteractables()
 	{
 		AActor* OverlappedActor = Cast<AActor>(Overlaps[i].GetActor());
 		//Make sure the reference is valid and we aren't interacting with ourselves
-		if (OverlappedActor && OverlappedActor != GetHWCharacter())
+		if (OverlappedActor && OverlappedActor != (AActor*)GetHWGASPlayerCharacter())
 		{
 			//Make sure this overlapped actor is Interactable (implementing UInteractable)
 			if (OverlappedActor->Implements<UInteractable>())
@@ -471,11 +473,11 @@ void AHWPlayerController::NotifyGetCustomCharacterData(TSharedPtr<FJsonObject> J
 
 			if (CustomFieldName == "BaseCharacterStats")
 			{
-				GetHWCharacter()->LoadBaseCharacterStatsFromJSON(CustomFieldValue);
+				GetHWGASPlayerCharacter()->LoadBaseCharacterStatsFromJSON(CustomFieldValue);
 			}
 			else if (CustomFieldName == "BaseCharacterSkills")
 			{
-				GetHWCharacter()->LoadBaseCharacterSkillsFromJSON(CustomFieldValue);
+				GetHWGASPlayerCharacter()->LoadBaseCharacterSkillsFromJSON(CustomFieldValue);
 			}
 			else if (CustomFieldName == "SupplyPodsOpened")
 			{
@@ -497,6 +499,9 @@ void AHWPlayerController::NotifyGetCustomCharacterData(TSharedPtr<FJsonObject> J
 
 		//Custom Character Data has been loaded.  Continue with additional Character initialization.
 		PartialInitializationComplete("CUSTOMCHARACTERDATA");
+
+		//Call CustomCharacterDataInitializationComplete to handle initialization post GetCustomCharacterData
+		CustomCharacterDataInitializationComplete();
 	}
 	else
 	{

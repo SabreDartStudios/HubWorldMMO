@@ -7,7 +7,7 @@
 #include "AbilitySystemInterface.h" 
 #include "./AbilitySystem/HWCombatAttributeSet.h" 
 #include "./Character/HWCharacter.h"
-#include "./Player/HWPlayerController.h"
+//#include "./Player/HWPlayerController.h"
 #include "./UI/HWHUD.h"
 #include "./AbilitySystem/HWAbilitySystemComponent.h"
 #include "HWGASCharacter.generated.h"

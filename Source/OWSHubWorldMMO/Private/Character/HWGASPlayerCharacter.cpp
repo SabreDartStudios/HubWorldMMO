@@ -4,6 +4,7 @@
 #include "./Character/HWGASPlayerCharacter.h"
 #include "../OWSHubWorldMMO.h"
 #include "EnhancedInputSubsystems.h"
+#include "./Player/HWPlayerController.h"
 #include "./Input/HWInputComponent.h"
 #include "./AbilitySystem/HWGameplayTags.h"
 
@@ -103,6 +104,13 @@ void AHWGASPlayerCharacter::AbilitySystemInitialized()
 	if (GetHWAbilitySystemComponent() && AbilityTagRelationshipMapping)
 	{
 		GetHWAbilitySystemComponent()->SetTagRelationshipMapping(AbilityTagRelationshipMapping);
+	}
+
+	AHWPlayerController* HWPlayerController = Cast<AHWPlayerController>(GetController());
+
+	if (HWPlayerController)
+	{
+		HWPlayerController->PartialInitializationComplete("GAS");
 	}
 }
 
