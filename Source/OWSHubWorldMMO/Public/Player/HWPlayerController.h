@@ -6,7 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Engine/NetSerialization.h"
 #include "OWSPlayerControllerComponent.h"
-#include "./Character/HWCharacter.h"
+#include "./Character/HWGASPlayerCharacter.h"
 #include "./Inventory/HWInventoryComponent.h"
 #include "./AbilitySystem/HWAbilitySystemComponent.h"
 #include "HWPlayerController.generated.h"
@@ -164,7 +164,7 @@ public:
 		FString OWSEncryptionKey = "";
 
 	UFUNCTION(BlueprintCallable, Category = "Player Character")
-		AHWCharacter* GetHWCharacter() const;
+		AHWGASPlayerCharacter* GetHWGASPlayerCharacter() const;
 
 	UFUNCTION(BlueprintCallable, Category = "Player State")
 		AOWSPlayerState* GetOWSPlayerState() const;

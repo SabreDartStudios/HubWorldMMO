@@ -19,7 +19,7 @@ AHWGASCharacter::AHWGASCharacter()
 	AbilitySystem = CreateDefaultSubobject<UHWAbilitySystemComponent>(AHWGASCharacter::AbilitySystemComponentName);
 	AbilitySystem->SetIsReplicated(true);
 
-	CombatAttributes = CreateDefaultSubobject<UCombatAttributeSet>(TEXT("CombatAttributeSet"));
+	CombatAttributes = CreateDefaultSubobject<UHWCombatAttributeSet>(TEXT("CombatAttributeSet"));
 }
 
 // Called when the game starts or when spawned
@@ -126,16 +126,18 @@ void AHWGASCharacter::CalculateCombatAttributes()
 {
 	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWGASCharacter - CalculateCombatAttributes Started"));
 
-	if (!CombatAttributes)
+	UHWCombatAttributeSet* HWCombatAttributeSet = (UHWCombatAttributeSet*)AbilitySystem->GetAttributeSet(UHWCombatAttributeSet::StaticClass());
+
+	if (!HWCombatAttributeSet)
 	{
 		UE_LOG(OWSHubWorldMMO, Error, TEXT("AHWGASCharacter - CalculateCombatAttributes - CombatAttributes is NULL!"));
 		return;
 	}
 
-	CombatAttributes->Attack.SetBaseValue(BaseCharacterStats.Strength * 10.f);
-	CombatAttributes->CritRate.SetBaseValue(BaseCharacterStats.Agility);
-	CombatAttributes->CritDamage.SetBaseValue(BaseCharacterStats.Strength + BaseCharacterStats.Agility);
-	CombatAttributes->MaxHealth.SetBaseValue(BaseCharacterStats.Constitution * 100);
+	HWCombatAttributeSet->HWSetAttack(BaseCharacterStats.Strength * 10.f);
+	HWCombatAttributeSet->HWSetCritRate(BaseCharacterStats.Agility);
+	HWCombatAttributeSet->HWSetCritDamage(BaseCharacterStats.Strength + BaseCharacterStats.Agility);
+	HWCombatAttributeSet->HWSetMaxHealth(BaseCharacterStats.Constitution * 100);
 }
 
 /*
