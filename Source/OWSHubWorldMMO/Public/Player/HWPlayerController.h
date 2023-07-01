@@ -207,8 +207,17 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Initialization")
 		void ReadyToPlayOnClient();
 
+	//Show the loading screen
+	void ShowLoadingScreen();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Loading Screen")
+		void BP_ShowLoadingScreen();
+
 	//Hide the loading screen
 	void HideLoadingScreen();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Loading Screen")
+		void BP_HideLoadingScreen();
 
 	//SetSelectedCharacterAndConnectToLastZone
 	UFUNCTION(BlueprintCallable, Category = "Travel")
@@ -251,20 +260,17 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Player")
 		void ErrorPlayerLogout(const FString& ErrorMsg);
 
-	/*
-	//Get Map Server to Travel To
+	//GetZoneServerToTravelTo
 	UFUNCTION(BlueprintCallable, Category = "Travel")
-		void GetMapServerToTravelTo(FString ZoneName);
+		void GetZoneServerToTravelTo(APlayerController* PlayerController, TEnumAsByte<ERPGSchemeToChooseMap::SchemeToChooseMap> SelectedSchemeToChooseMap, 
+			int32 WorldServerID, FString ZoneName, FVector LocationOnMap, FRotator StartingRotation);
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "Travel")
-		void NotifyMapServerToTravelTo(const FString& ServerAndPort);
-	UFUNCTION(BlueprintImplementableEvent, Category = "Travel")
-		void ErrorMapServerToTravelTo(const FString& ErrorMsg);
-	*/
-	
 	//Player Controller Component Delegate Bindings
 	void NotifyGetCustomCharacterData(TSharedPtr<FJsonObject> JsonObject);
 	void ErrorCustomCharacterData(const FString& ErrorMsg);
+
+	void NotifyZoneServerToTravelTo(const FString& ServerAndPort);
+	void ErrorZoneServerToTravelTo(const FString& ErrorMsg);
 
 	
 
@@ -272,4 +278,7 @@ protected:
 
 	virtual void BeginPlayingState() override;
 	virtual void PostProcessInput(const float DeltaTime, const bool bGamePaused) override;
+
+	FVector ZoneToTravelToLocation;
+	FRotator ZoneToTravelToStartingRotation;
 };

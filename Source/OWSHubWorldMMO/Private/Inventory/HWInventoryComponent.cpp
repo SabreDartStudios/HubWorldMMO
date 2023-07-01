@@ -62,7 +62,7 @@ void UHWInventoryComponent::AddItemToInventory(int32 ItemTypeID, int32 Quantity,
 	ItemToAdd.Quantity = Quantity;
 	ItemToAdd.NumberOfUsesLeft = NumberOfUsesLeft;
 	ItemToAdd.Condition = Condition;
-	ItemToAdd.CustomJSON = CustomJSON;
+	//ItemToAdd.CustomJSON = CustomJSON;
 
 	ItemToAdd.InSlotNumber = 0;
 
@@ -185,7 +185,7 @@ void UHWInventoryComponent::ReloadDisplayItems()
 	{
 		return;
 	}
-
+	 
 	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("UHWInventoryComponent - ReloadDisplayItems Started on the Client Side"));
 
 	int32 Slack = Inventory.Items.Num();
@@ -200,7 +200,7 @@ void UHWInventoryComponent::ReloadDisplayItems()
 			//Add details from Runtime inventory data (InventoryItem)
 			ItemToAdd->Data.ItemGUID = InventoryItem.ItemGUID;
 			ItemToAdd->Data.Condition = InventoryItem.Condition;
-			ItemToAdd->Data.CustomJSON = InventoryItem.CustomJSON;
+			//ItemToAdd->Data.CustomJSON = InventoryItem.CustomJSON;
 			ItemToAdd->Data.InSlotNumber = InventoryItem.InSlotNumber;
 			ItemToAdd->Data.ItemTypeID = InventoryItem.ItemTypeID;
 			ItemToAdd->Data.NumberOfUsesLeft = InventoryItem.NumberOfUsesLeft;

@@ -116,7 +116,14 @@ struct FHWInventoryItem : public FFastArraySerializerItem
 		InSlotNumber = 1;
 		NumberOfUsesLeft = 0;
 		Condition = 0;
-		CustomJSON = "";
+		FlatAttack = 0;
+		FlatDefense = 0;
+		FlatHP = 0;
+		AttackPercent = 0.f;
+		DefensePercent = 0.f;
+		HPPercent = 0.f;
+		CritRate = 0.f;
+		CritDamage = 0.f;
 	}
 
 	/*
@@ -138,7 +145,21 @@ struct FHWInventoryItem : public FFastArraySerializerItem
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory")
 		int32 Condition;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory")
-		FString CustomJSON;
+		int32 FlatAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory")
+		int32 FlatDefense;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory")
+		int32 FlatHP;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory")
+		float AttackPercent;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory")
+		float DefensePercent;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory")
+		float HPPercent;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory")
+		float CritRate;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory")
+		float CritDamage;
 
 };
 
@@ -211,6 +232,9 @@ public:
 		FString InventoryName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+		int32 InventorySize;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 		UDataTable* ItemLibrary;
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
@@ -258,4 +282,5 @@ public:
 	//int32* GetReplicationList(uint8* Recent, FPropertyRetirement* Retire, int32* Ptr, UPackageMap* Map, UActorChannel* Channel, FReplicationFlags RepFlags);
 		
 };
+
 

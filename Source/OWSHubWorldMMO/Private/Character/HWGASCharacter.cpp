@@ -125,7 +125,7 @@ void AHWGASCharacter::GrantAbilityKeyBind(TSubclassOf<class UGameplayAbility> Ne
 void AHWGASCharacter::CalculateCombatAttributes()
 {
 	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWGASCharacter - CalculateCombatAttributes Started"));
-
+	
 	UHWCombatAttributeSet* HWCombatAttributeSet = (UHWCombatAttributeSet*)AbilitySystem->GetAttributeSet(UHWCombatAttributeSet::StaticClass());
 
 	if (!HWCombatAttributeSet)

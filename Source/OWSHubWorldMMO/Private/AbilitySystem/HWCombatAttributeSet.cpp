@@ -13,15 +13,15 @@
 UHWCombatAttributeSet::UHWCombatAttributeSet(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	InitMaxHealth(100.f);
+	InitMaxHealth(1000.f); //Overriden by calculation of Constitution * 100
 	InitMaxEnergy(100.f);
-	InitMaxMana(100.f);
+	InitMaxStamina(100.f);
 	InitHealth(100.f);
 	InitEnergy(100.f);
-	InitMana(100.f);
+	InitStamina(100.f);
 
-	InitEnergyRegenRate(1.f);
-	InitManaRegenRate(0.5f);
+	InitHealthRegenRate(100.0f); //This value is regenerated every 5 seconds
+	InitEnergyRegenRate(0.f);	
 
 	InitStrength(10.f);
 	InitAgility(10.f);
@@ -231,34 +231,28 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 
 void UHWCombatAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data)
 {
-	static FProperty* DamageProperty = FindFieldChecked<FProperty>(UHWCombatAttributeSet::StaticClass(), GET_MEMBER_NAME_CHECKED(UHWCombatAttributeSet, Damage));
-	static FProperty* HealingProperty = FindFieldChecked<FProperty>(UHWCombatAttributeSet::StaticClass(), GET_MEMBER_NAME_CHECKED(UHWCombatAttributeSet, Healing));
-	static FProperty* EnergyProperty = FindFieldChecked<FProperty>(UHWCombatAttributeSet::StaticClass(), GET_MEMBER_NAME_CHECKED(UHWCombatAttributeSet, Energy));
-	static FProperty* ManaProperty = FindFieldChecked<FProperty>(UHWCombatAttributeSet::StaticClass(), GET_MEMBER_NAME_CHECKED(UHWCombatAttributeSet, Mana));
-	FProperty* ModifiedProperty = Data.EvaluatedData.Attribute.GetUProperty();
-
 	// What property was modified?
-	if (DamageProperty == ModifiedProperty)
+	if (Data.EvaluatedData.Attribute == GetDamageAttribute())
 	{
 		// Treat damage as minus health
 		SetHealth(FMath::Clamp(GetHealth() - Damage.GetCurrentValue(), 0.f, GetMaxHealth()));
 		Damage = 0.f;
 	}
 
-	if (HealingProperty == ModifiedProperty)
+	if (Data.EvaluatedData.Attribute ==GetHealingAttribute())
 	{
 		SetHealth(FMath::Clamp(GetHealth() + Healing.GetCurrentValue(), 0.f, GetMaxHealth()));
 		Healing = 0.f;
 	}
 
-	if (EnergyProperty == ModifiedProperty)
+	if (Data.EvaluatedData.Attribute == GetEnergyAttribute())
 	{
 		SetEnergy(FMath::Clamp(GetEnergy(), 0.f, GetMaxEnergy()));
 	}
 
-	if (ManaProperty == ModifiedProperty)
+	if (Data.EvaluatedData.Attribute == GetStaminaAttribute())
 	{
-		SetMana(FMath::Clamp(GetMana(), 0.f, GetMaxMana()));
+		SetStamina(FMath::Clamp(GetStamina(), 0.f, GetMaxStamina()));
 	}
 
 	//Dead
@@ -280,12 +274,11 @@ void UHWCombatAttributeSet::GetLifetimeReplicatedProps(TArray< FLifetimeProperty
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, Health, COND_OwnerOnly, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, MaxHealth, COND_OwnerOnly, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, HealthRegenRate, COND_OwnerOnly, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, Mana, COND_OwnerOnly, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, MaxMana, COND_OwnerOnly, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, ManaRegenRate, COND_OwnerOnly, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, Energy, COND_OwnerOnly, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, MaxEnergy, COND_OwnerOnly, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, EnergyRegenRate, COND_OwnerOnly, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, Stamina, COND_OwnerOnly, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, MaxStamina, COND_OwnerOnly, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, Strength, COND_OwnerOnly, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, Agility, COND_OwnerOnly, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, Constitution, COND_OwnerOnly, REPNOTIFY_Always);

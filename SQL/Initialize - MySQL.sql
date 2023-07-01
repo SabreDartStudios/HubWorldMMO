@@ -10,12 +10,22 @@ SELECT CONCAT(COUNT(*), 0)
 INTO @CountOfHubWorldMaps
 FROM Maps
 WHERE CustomerGUID = @CustomerGUID
-    AND MapName = 'HubWorldMap';
-
+    AND ZoneName = 'HubWorld';
 
 IF @CountOfHubWorldMaps < 1 THEN
     INSERT INTO Maps (CustomerGUID, MapName, MapData, Width, Height, ZoneName, WorldCompContainsFilter, WorldCompListFilter, MapMode, SoftPlayerCap, HardPlayerCap, MinutesToShutdownAfterEmpty)
     VALUES (@CustomerGUID, 'HubWorldMap', NULL, 1, 1, 'HubWorld', '', '', 1, 60, 80, 1);
+END IF;
+
+SELECT CONCAT(COUNT(*), 0)
+INTO @CountOfHubWorldMaps
+FROM Maps
+WHERE CustomerGUID = @CustomerGUID
+    AND ZoneName = 'SouthGate';
+
+IF @CountOfHubWorldMaps < 1 THEN
+    INSERT INTO Maps (CustomerGUID, MapName, MapData, Width, Height, ZoneName, WorldCompContainsFilter, WorldCompListFilter, MapMode, SoftPlayerCap, HardPlayerCap, MinutesToShutdownAfterEmpty)
+    VALUES (@CustomerGUID, 'HubWorldMap', NULL, 1, 1, 'SouthGate', '', '', 1, 60, 80, 1);
 END IF;
 
 SELECT CONCAT(COUNT(*), 0)
