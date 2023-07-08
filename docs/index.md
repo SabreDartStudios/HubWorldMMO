@@ -40,3 +40,7 @@ layout: home
 8. Right click on the OWSHubWorldMMO.uproject file and click on "Generate project files..."
 9. Open the OWS 2 project in Visual Studio 2022 and press docker-compose.  Give it a minute or two to fully start up.  You must repeat this step whenever you want to develop with the Hub World MMO project.  "docker-compose" MUST stay running in Visual Studio 2022 the entire time.
 10. Open OWSHubWorldMMO.sln in a second copy of Visual Studio 2022 and press the green play button.
+
+## Setup Instructions Video
+
+<iframe width="100%" height="410" src="https://www.youtube.com/embed/21q3IvkFLnw" title="Hub World MMO - How to Install" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
