@@ -16,7 +16,7 @@
 UCLASS()
 class OWSHUBWORLDMMO_API UHWCombatAttributeSet : public UHWAttributeSet
 {
-    GENERATED_UCLASS_BODY()
+    GENERATED_BODY()
 
 private:
     FGameplayTag DeadTag;
@@ -41,6 +41,8 @@ private:
     void HandlePreExecuteEffectDamage(bool IsCritDamage, struct FGameplayEffectModCallbackData& Data);
 
 public:
+    UHWCombatAttributeSet();
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Internal")
         AHWGASCharacter* WhoAttackedUsLast;
 
@@ -462,6 +464,8 @@ public:
 
     ATTRIBUTE_ACCESSORS(UHWCombatAttributeSet, Damage)
     ATTRIBUTE_ACCESSORS(UHWCombatAttributeSet, Healing)
+
+protected:
 
     virtual bool PreGameplayEffectExecute(struct FGameplayEffectModCallbackData& Data) override;
     virtual void PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data) override;

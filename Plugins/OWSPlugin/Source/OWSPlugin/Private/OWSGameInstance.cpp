@@ -132,7 +132,7 @@ FString UOWSGameInstance::EncryptWithAES(FString StringToEncrypt, FString Key)
 	StringToEncrypt.Append(SplitSymbol);
 
 	Key = FMD5::HashAnsiString(*Key);
-	TCHAR *KeyTChar = Key.GetCharArray().GetData();
+	TCHAR* KeyTChar = Key.GetCharArray().GetData();
 
 	uint32 Size = StringToEncrypt.Len();
 	Size = Size + (FAES::AESBlockSize - (Size % FAES::AESBlockSize));
@@ -160,7 +160,7 @@ FString UOWSGameInstance::DecryptWithAES(FString StringToDecrypt, FString Key)
 	FString SplitSymbol = "OWS#@!";
 
 	Key = FMD5::HashAnsiString(*Key);
-	TCHAR *KeyTChar = Key.GetCharArray().GetData();
+	TCHAR* KeyTChar = Key.GetCharArray().GetData();
 
 	uint32 Size = StringToDecrypt.Len();
 	Size = Size + (FAES::AESBlockSize - (Size % FAES::AESBlockSize));

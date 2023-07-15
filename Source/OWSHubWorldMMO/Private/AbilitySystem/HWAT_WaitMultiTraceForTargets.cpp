@@ -142,6 +142,9 @@ void UHWAT_WaitMultiTraceForTargets::OnTargetDataReadyCallback(const FGameplayAb
 		return;
 	}
 
+	const FGameplayAbilityTargetData* AbilityTargetData = Data.Get(0);
+	TArray<TWeakObjectPtr<AActor>> ActorsHit = AbilityTargetData->GetActors();
+
 	ValidData.Broadcast(Data);
 
 	//If we are combining the targets, then end the task after we return them.  If we are aren't combining the targets then there may be additional calls to the ValidData delegate

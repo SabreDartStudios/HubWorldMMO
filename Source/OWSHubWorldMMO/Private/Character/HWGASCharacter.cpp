@@ -52,6 +52,8 @@ void AHWGASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	AbilitySystem->RegisterGenericGameplayTagEvent().AddUObject(this, &AHWGASCharacter::OnUIRelatedTagsChanged);
 }
 
+
+//Only called on the server side
 void AHWGASCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);

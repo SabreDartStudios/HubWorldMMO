@@ -10,8 +10,7 @@
 #include "GameplayEffectExtension.h"
 #include "./Character/HWGASCharacter.h"
 
-UHWCombatAttributeSet::UHWCombatAttributeSet(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+UHWCombatAttributeSet::UHWCombatAttributeSet()
 {
 	InitMaxHealth(1000.f); //Overriden by calculation of Constitution * 100
 	InitMaxEnergy(100.f);
@@ -54,21 +53,14 @@ void UHWCombatAttributeSet::SetupGameplayTags()
 //This function is only called on the server
 bool UHWCombatAttributeSet::PreGameplayEffectExecute(struct FGameplayEffectModCallbackData& Data)
 {
-	static FProperty* HealthProperty = FindFieldChecked<FProperty>(UHWCombatAttributeSet::StaticClass(), GET_MEMBER_NAME_CHECKED(UHWCombatAttributeSet, Health));
-	static FProperty* DamageProperty = FindFieldChecked<FProperty>(UHWCombatAttributeSet::StaticClass(), GET_MEMBER_NAME_CHECKED(UHWCombatAttributeSet, Damage));
-	static FProperty* CritHitDamageProperty = FindFieldChecked<FProperty>(UHWCombatAttributeSet::StaticClass(), GET_MEMBER_NAME_CHECKED(UHWCombatAttributeSet, CritHitDamage));
-	static FProperty* HealingProperty = FindFieldChecked<FProperty>(UHWCombatAttributeSet::StaticClass(), GET_MEMBER_NAME_CHECKED(UHWCombatAttributeSet, Healing));
-
-	FProperty* ModifiedProperty = Data.EvaluatedData.Attribute.GetUProperty();
-
 	float CritHitDamageMagnitude = 0.f;
-	if (CritHitDamageProperty == ModifiedProperty)
+	if (Data.EvaluatedData.Attribute == GetCritHitDamageAttribute())
 	{
 		HandlePreExecuteEffectDamage(true, Data);
 	}
 
 	// Is Damage about to be applied?
-	if (DamageProperty == ModifiedProperty)
+	if (Data.EvaluatedData.Attribute == GetDamageAttribute())
 	{
 		HandlePreExecuteEffectDamage(false, Data);
 	}
@@ -271,8 +263,8 @@ void UHWCombatAttributeSet::GetLifetimeReplicatedProps(TArray< FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 
-	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, Health, COND_OwnerOnly, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, MaxHealth, COND_OwnerOnly, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, Health, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, MaxHealth, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, HealthRegenRate, COND_OwnerOnly, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, Energy, COND_OwnerOnly, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, MaxEnergy, COND_OwnerOnly, REPNOTIFY_Always);
