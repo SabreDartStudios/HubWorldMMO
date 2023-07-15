@@ -31,7 +31,7 @@ layout: home
 ## Setup Instructions
 
 1. Install OWS 2 by following the [Setup Instructions](https://www.openworldserver.com/getting-started/) up to the point of getting your API key.  Once you have your API key, you can continue with setting up the Hub World MMO example project.
-2. Fork the Hub World MMO project to your own GitHub.  This is a VERY important step if you intend to make modifications.
+2. Fork the [Hub World MMO project](https://github.com/SabreDartStudios/HubWorldMMO) to your own GitHub.  This is a VERY important step if you intend to make modifications.
 3. Once you have your own fork of the Hub World MMO project on your GitHub, then you can open Visual Studio 2022 and Clone it.
 4. After it downloads all of the files, open Config/DefaultGame.ini and put your API key in the OWSAPICustomerKey and save the file.
 5. Open OWSInstanceLauncher/appsettings.json and put your API key in OWSAPIKey.  You also need to set PathToDedicatedServer to point to your Unreal Engine 5 editor and set PathToUProject to point to the OWSHubWorldMMO.uproject file.
