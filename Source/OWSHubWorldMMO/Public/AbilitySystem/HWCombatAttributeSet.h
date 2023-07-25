@@ -16,7 +16,7 @@
 UCLASS()
 class OWSHUBWORLDMMO_API UHWCombatAttributeSet : public UHWAttributeSet
 {
-    GENERATED_UCLASS_BODY()
+    GENERATED_BODY()
 
 private:
     FGameplayTag DeadTag;
@@ -41,6 +41,8 @@ private:
     void HandlePreExecuteEffectDamage(bool IsCritDamage, struct FGameplayEffectModCallbackData& Data);
 
 public:
+    UHWCombatAttributeSet();
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Internal")
         AHWGASCharacter* WhoAttackedUsLast;
 
@@ -121,82 +123,7 @@ public:
     {
         InitHealthRegenRate(NewVal);
     }
-
-    //Mana
-private:
-    UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Mana, Category = CombatAttributes, Meta = (AllowPrivateAccess = true))
-        FGameplayAttributeData Mana;
-protected:
-    UFUNCTION()
-        void OnRep_Mana(const FGameplayAttributeData& OldMana) { GAMEPLAYATTRIBUTE_REPNOTIFY(UHWCombatAttributeSet, Mana, OldMana); }
-public:
-    ATTRIBUTE_ACCESSORS(UHWCombatAttributeSet, Mana)
-        UFUNCTION(BlueprintCallable, Category = CombatAttributes)
-        float HWGetMana() const
-    {
-        return GetMana();
-    }
-    UFUNCTION(BlueprintCallable, Category = CombatAttributes)
-        void HWSetMana(float NewVal)
-    {
-        SetMana(NewVal);
-    }
-    UFUNCTION(BlueprintCallable, Category = CombatAttributes)
-        void HWInitMana(float NewVal)
-    {
-        InitMana(NewVal);
-    }
-
-    //MaxMana
-private:
-    UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MaxMana, Category = CombatAttributes, Meta = (AllowPrivateAccess = true))
-        FGameplayAttributeData MaxMana;
-protected:
-    UFUNCTION()
-        void OnRep_MaxMana(const FGameplayAttributeData& OldMaxMana) { GAMEPLAYATTRIBUTE_REPNOTIFY(UHWCombatAttributeSet, MaxMana, OldMaxMana); }
-public:
-    ATTRIBUTE_ACCESSORS(UHWCombatAttributeSet, MaxMana)
-        UFUNCTION(BlueprintCallable, Category = CombatAttributes)
-        float HWGetMaxMana() const
-    {
-        return GetMaxMana();
-    }
-    UFUNCTION(BlueprintCallable, Category = CombatAttributes)
-        void HWSetMaxMana(float NewVal)
-    {
-        SetMaxMana(NewVal);
-    }
-    UFUNCTION(BlueprintCallable, Category = CombatAttributes)
-        void HWInitMaxMana(float NewVal)
-    {
-        InitMaxMana(NewVal);
-    }
-
-    //ManaRegenRate
-private:
-    UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_ManaRegenRate, Category = CombatAttributes, Meta = (AllowPrivateAccess = true))
-        FGameplayAttributeData ManaRegenRate;
-protected:
-    UFUNCTION()
-        void OnRep_ManaRegenRate(const FGameplayAttributeData& OldManaRegenRate) { GAMEPLAYATTRIBUTE_REPNOTIFY(UHWCombatAttributeSet, ManaRegenRate, OldManaRegenRate); }
-public:
-    ATTRIBUTE_ACCESSORS(UHWCombatAttributeSet, ManaRegenRate)
-        UFUNCTION(BlueprintCallable, Category = CombatAttributes)
-        float HWGetManaRegenRate() const
-    {
-        return GetManaRegenRate();
-    }
-    UFUNCTION(BlueprintCallable, Category = CombatAttributes)
-        void HWSetManaRegenRate(float NewVal)
-    {
-        SetManaRegenRate(NewVal);
-    }
-    UFUNCTION(BlueprintCallable, Category = CombatAttributes)
-        void HWInitManaRegenRate(float NewVal)
-    {
-        InitManaRegenRate(NewVal);
-    }
-
+    
     //Energy
 private:
     UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Energy, Category = CombatAttributes, Meta = (AllowPrivateAccess = true))
@@ -270,6 +197,56 @@ public:
         void HWInitEnergyRegenRate(float NewVal)
     {
         InitEnergyRegenRate(NewVal);
+    }
+
+    //Stamina
+private:
+    UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Stamina, Category = CombatAttributes, Meta = (AllowPrivateAccess = true))
+        FGameplayAttributeData Stamina;
+protected:
+    UFUNCTION()
+        void OnRep_Stamina(const FGameplayAttributeData& OldStamina) { GAMEPLAYATTRIBUTE_REPNOTIFY(UHWCombatAttributeSet, Stamina, OldStamina); }
+public:
+    ATTRIBUTE_ACCESSORS(UHWCombatAttributeSet, Stamina)
+        UFUNCTION(BlueprintCallable, Category = CombatAttributes)
+        float HWGetStamina() const
+    {
+        return GetStamina();
+    }
+    UFUNCTION(BlueprintCallable, Category = CombatAttributes)
+        void HWSetStamina(float NewVal)
+    {
+        SetStamina(NewVal);
+    }
+    UFUNCTION(BlueprintCallable, Category = CombatAttributes)
+        void HWInitStamina(float NewVal)
+    {
+        InitStamina(NewVal);
+    }
+
+    //MaxStamina
+private:
+    UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MaxStamina, Category = CombatAttributes, Meta = (AllowPrivateAccess = true))
+        FGameplayAttributeData MaxStamina;
+protected:
+    UFUNCTION()
+        void OnRep_MaxStamina(const FGameplayAttributeData& OldMaxStamina) { GAMEPLAYATTRIBUTE_REPNOTIFY(UHWCombatAttributeSet, MaxStamina, OldMaxStamina); }
+public:
+    ATTRIBUTE_ACCESSORS(UHWCombatAttributeSet, MaxStamina)
+        UFUNCTION(BlueprintCallable, Category = CombatAttributes)
+        float HWGetMaxStamina() const
+    {
+        return GetMaxStamina();
+    }
+    UFUNCTION(BlueprintCallable, Category = CombatAttributes)
+        void HWSetMaxStamina(float NewVal)
+    {
+        SetMaxStamina(NewVal);
+    }
+    UFUNCTION(BlueprintCallable, Category = CombatAttributes)
+        void HWInitMaxStamina(float NewVal)
+    {
+        InitMaxStamina(NewVal);
     }
 
     //Strength
@@ -487,6 +464,8 @@ public:
 
     ATTRIBUTE_ACCESSORS(UHWCombatAttributeSet, Damage)
     ATTRIBUTE_ACCESSORS(UHWCombatAttributeSet, Healing)
+
+protected:
 
     virtual bool PreGameplayEffectExecute(struct FGameplayEffectModCallbackData& Data) override;
     virtual void PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data) override;

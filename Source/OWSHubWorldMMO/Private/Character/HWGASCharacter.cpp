@@ -52,6 +52,8 @@ void AHWGASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	AbilitySystem->RegisterGenericGameplayTagEvent().AddUObject(this, &AHWGASCharacter::OnUIRelatedTagsChanged);
 }
 
+
+//Only called on the server side
 void AHWGASCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
@@ -125,7 +127,7 @@ void AHWGASCharacter::GrantAbilityKeyBind(TSubclassOf<class UGameplayAbility> Ne
 void AHWGASCharacter::CalculateCombatAttributes()
 {
 	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWGASCharacter - CalculateCombatAttributes Started"));
-
+	
 	UHWCombatAttributeSet* HWCombatAttributeSet = (UHWCombatAttributeSet*)AbilitySystem->GetAttributeSet(UHWCombatAttributeSet::StaticClass());
 
 	if (!HWCombatAttributeSet)

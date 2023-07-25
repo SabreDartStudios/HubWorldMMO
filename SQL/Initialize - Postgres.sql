@@ -14,13 +14,23 @@ BEGIN
     SELECT CONCAT(COUNT(*), 0)
     FROM Maps
     WHERE CustomerGUID = _CustomerGUID
-        AND MapName = 'HubWorldMap'
+        AND ZoneName = 'HubWorld'
     INTO _CountOfHubWorldMaps;
-
 
     IF _CountOfHubWorldMaps < 1 THEN
         INSERT INTO Maps (CustomerGUID, MapName, MapData, Width, Height, ZoneName, WorldCompContainsFilter, WorldCompListFilter, MapMode, SoftPlayerCap, HardPlayerCap, MinutesToShutdownAfterEmpty)
         VALUES (_CustomerGUID, 'HubWorldMap', NULL, 1, 1, 'HubWorld', '', '', 1, 60, 80, 1);
+    END IF;
+	
+	SELECT CONCAT(COUNT(*), 0)
+    FROM Maps
+    WHERE CustomerGUID = _CustomerGUID
+        AND ZoneName = 'SouthGate'
+    INTO _CountOfHubWorldMaps;
+
+    IF _CountOfHubWorldMaps < 1 THEN
+        INSERT INTO Maps (CustomerGUID, MapName, MapData, Width, Height, ZoneName, WorldCompContainsFilter, WorldCompListFilter, MapMode, SoftPlayerCap, HardPlayerCap, MinutesToShutdownAfterEmpty)
+        VALUES (_CustomerGUID, 'HubWorldMap', NULL, 1, 1, 'SouthGate', '', '', 1, 60, 80, 1);
     END IF;
 
     SELECT CONCAT(COUNT(*), 0)

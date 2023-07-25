@@ -55,6 +55,9 @@ AHWPlayerController::AHWPlayerController()
 
 	OWSPlayerControllerComponent->OnNotifyGetCustomCharacterDataDelegate.BindUObject(this, &AHWPlayerController::NotifyGetCustomCharacterData);
 	OWSPlayerControllerComponent->OnErrorGetCustomCharacterDataDelegate.BindUObject(this, &AHWPlayerController::ErrorCustomCharacterData);
+
+	OWSPlayerControllerComponent->OnNotifyGetZoneServerToTravelToDelegate.BindUObject(this, &AHWPlayerController::NotifyZoneServerToTravelTo);
+	OWSPlayerControllerComponent->OnErrorGetZoneServerToTravelToDelegate.BindUObject(this, &AHWPlayerController::ErrorZoneServerToTravelTo);
 	/*
 	OWSPlayerControllerComponent->OnNotifyPlayerLogoutDelegate.BindUObject(this, &AHWPlayerController::NotifyPlayerLogout);
 	OWSPlayerControllerComponent->OnErrorPlayerLogoutDelegate.BindUObject(this, &AHWPlayerController::ErrorPlayerLogout);
@@ -239,11 +242,18 @@ void AHWPlayerController::OwningClient_ReadyToPlay_Implementation()
 	PartialInitializationComplete("SERVERSIDEDONE");
 }
 
+void AHWPlayerController::ShowLoadingScreen()
+{
+	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - ShowLoadingScreen Started"));
+
+	BP_ShowLoadingScreen();
+}
 
 void AHWPlayerController::HideLoadingScreen()
 {
 	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWPlayerController - HideLoadingScreen Started"));
 
+	BP_HideLoadingScreen();
 }
 
 /***** Supply Pods *****/
@@ -454,6 +464,17 @@ void AHWPlayerController::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 }
 
 
+//Zone Travel
+void AHWPlayerController::GetZoneServerToTravelTo(APlayerController* PlayerController, TEnumAsByte<ERPGSchemeToChooseMap::SchemeToChooseMap> SelectedSchemeToChooseMap, 
+	int32 WorldServerID, FString ZoneName, FVector LocationOnMap, FRotator StartingRotation)
+{
+	ZoneToTravelToLocation = LocationOnMap;
+	ZoneToTravelToStartingRotation = StartingRotation;
+	FString CharacterName = PlayerController->PlayerState->GetPlayerName();
+	OWSPlayerControllerComponent->GetZoneServerToTravelTo(CharacterName, SelectedSchemeToChooseMap, WorldServerID, ZoneName);
+}
+
+
 //***** Delegate Bindings *****
 
 //Callback for Get Custom Character Data.  Deserializes the BaseCharacterStats and BaseCharacterSkills and stores the values in the STRUCTs on the Character.
@@ -514,4 +535,18 @@ void AHWPlayerController::ErrorCustomCharacterData(const FString& ErrorMsg)
 {
 	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - ErrorCustomCharacterData: %s"), *ErrorMsg);
 	
+}
+
+void AHWPlayerController::NotifyZoneServerToTravelTo(const FString& ServerAndPort)
+{
+	UE_LOG(OWSHubWorldMMO, Warning, TEXT("NotifyZoneServerToTravelTo - %s"), *ServerAndPort);
+
+	OWSPlayerControllerComponent->TravelToMap2(ServerAndPort, ZoneToTravelToLocation.X, ZoneToTravelToLocation.Y, ZoneToTravelToLocation.Z, 
+		ZoneToTravelToStartingRotation.Pitch, ZoneToTravelToStartingRotation.Roll, ZoneToTravelToStartingRotation.Yaw,
+		GetOWSPlayerState()->GetPlayerName(), false);
+}
+
+void AHWPlayerController::ErrorZoneServerToTravelTo(const FString& ErrorMsg)
+{
+	UE_LOG(OWSHubWorldMMO, Error, TEXT("ErrorZoneServerToTravelTo - %s"), *ErrorMsg);
 }

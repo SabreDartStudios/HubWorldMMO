@@ -2,7 +2,7 @@ DECLARE @CustomerGUID uniqueidentifier = ''
 
 DECLARE @CountOfHubWorldMaps int = 0
 
-SELECT @CountOfHubWorldMaps=COUNT(*) FROM Maps WHERE CustomerGUID=@CustomerGUID AND MapName='HubWorldMap'
+SELECT @CountOfHubWorldMaps=COUNT(*) FROM Maps WHERE CustomerGUID=@CustomerGUID AND ZoneName='HubWorld'
 
 IF (@CountOfHubWorldMaps < 1)
 BEGIN
@@ -12,6 +12,17 @@ VALUES (@CustomerGUID, 'HubWorldMap', NULL, 1, 1, 'HubWorld', '', '', 1, 60, 80,
 
 END
 
+SET @CountOfHubWorldMaps = 0
+
+SELECT @CountOfHubWorldMaps=COUNT(*) FROM Maps WHERE CustomerGUID=@CustomerGUID AND ZoneName='SouthGate'
+
+IF (@CountOfHubWorldMaps < 1)
+BEGIN
+
+INSERT INTO Maps ([CustomerGUID], [MapName], [MapData], [Width], [Height], [ZoneName], [WorldCompContainsFilter], [WorldCompListFilter], [MapMode], [SoftPlayerCap], [HardPlayerCap], [MinutesToShutdownAfterEmpty])
+VALUES (@CustomerGUID, 'HubWorldMap', NULL, 1, 1, 'SouthGate', '', '', 1, 60, 80, 1)
+
+END
 
 DECLARE @DefaultCharacterValuesID int = 0
 DECLARE @CountOfDefaultCharacterValues int = 0

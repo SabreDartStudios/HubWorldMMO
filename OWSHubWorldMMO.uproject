@@ -14,7 +14,8 @@
 				"UMG",
 				"CommonUI",
 				"EnhancedInput",
-				"CoreUObject"
+				"CoreUObject",
+				"OWSPlugin"
 			]
 		}
 	],

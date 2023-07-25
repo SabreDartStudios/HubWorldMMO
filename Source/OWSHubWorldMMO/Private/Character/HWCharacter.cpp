@@ -81,6 +81,23 @@ void AHWCharacter::LoadBaseCharacterSkillsFromJSON(FString BaseCharacterSkillsJS
 	FJsonObjectConverter::JsonObjectStringToUStruct(BaseCharacterSkillsJSON, &BaseCharacterSkills);
 }
 
+// Serialize Character Experience to an FString
+FString AHWCharacter::SerializeCharacterExperience()
+{
+	FString SerializedCharacterExperience = "";
+	if (FJsonObjectConverter::UStructToJsonObjectString(CharacterExperience, SerializedCharacterExperience))
+	{
+		return SerializedCharacterExperience;
+	}
+	return "";
+}
+
+// Deserialize an FString to Character Experience
+void AHWCharacter::LoadCharacterExperienceFromJSON(FString CharacterExperienceJSON)
+{
+	FJsonObjectConverter::JsonObjectStringToUStruct(CharacterExperienceJSON, &CharacterExperience);
+}
+
 void AHWCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -88,5 +105,6 @@ void AHWCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLi
 	//Only replicate to owner for stats UI
 	DOREPLIFETIME_CONDITION(AHWCharacter, BaseCharacterStats, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AHWCharacter, BaseCharacterSkills, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AHWCharacter, CharacterExperience, COND_OwnerOnly);
 
 }

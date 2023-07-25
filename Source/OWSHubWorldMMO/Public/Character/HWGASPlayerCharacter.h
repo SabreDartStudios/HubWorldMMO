@@ -24,6 +24,12 @@ class OWSHUBWORLDMMO_API AHWGASPlayerCharacter : public AHWGASCharacter
 public:
 	AHWGASPlayerCharacter();
 
+	//Zones
+	UFUNCTION(BlueprintCallable, Category = "Travel")
+		void SetIsTransferringBetweenZones(bool bSetIsTransferringBetweenZones);
+	UFUNCTION(BlueprintCallable, Category = "Travel")
+		bool GetIsTransferringBetweenZones();
+
 	//Input Config
 	UPROPERTY(EditAnywhere, Category = "HW|Input")
 		TArray<FMappableConfigPair> DefaultInputConfigs;
@@ -72,4 +78,7 @@ protected:
 	void AbilitySystemInitialized();
 
 	virtual void PossessedBy(AController* NewController) override;
+
+private:
+	bool bIsTransferringBetweenZones;
 };

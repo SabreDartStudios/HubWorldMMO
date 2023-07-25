@@ -16,6 +16,7 @@ struct FHWBaseCharacterStats
 		Strength = 10;
 		Agility = 10;
 		Constitution = 10;
+		CharacterLevel = 1;
 	}
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
@@ -24,6 +25,8 @@ struct FHWBaseCharacterStats
 		int32 Agility;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
 		int32 Constitution;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
+		int32 CharacterLevel;
 
 };
 
@@ -40,6 +43,25 @@ struct FHWBaseCharacterSkills
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Skills")
 		int32 Skill1;
+
+};
+
+
+USTRUCT(BlueprintType, Blueprintable)
+struct FHWCharacterExperience
+{
+	GENERATED_USTRUCT_BODY()
+
+	FHWCharacterExperience()
+	{
+		XP = 10;
+		NumberOfKills = 10;
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
+		int32 XP;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
+		int32 NumberOfKills;
 
 };
 
@@ -76,6 +98,18 @@ public:
 	// Deserialize an FString to Base Character Skills
 	UFUNCTION(BlueprintCallable, Category = "Stats")
 		void LoadBaseCharacterSkillsFromJSON(FString BaseCharacterSkillsJSON);
+
+	// Character Experience Struct
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, Category = "Experience")
+		FHWCharacterExperience CharacterExperience;
+
+	// Serialize Character Experience to an FString
+	UFUNCTION(BlueprintCallable, Category = "Experience")
+		FString SerializeCharacterExperience();
+
+	// Deserialize an FString to Character Experience
+	UFUNCTION(BlueprintCallable, Category = "Experience")
+		void LoadCharacterExperienceFromJSON(FString CharacterExperienceJSON);
 
 protected:
 	// Called when the game starts or when spawned

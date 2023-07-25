@@ -17,11 +17,15 @@ struct FHWFloatingDamage
 	FHWFloatingDamage() {
 		DamageText = "";
 		DamageTextLength = 0.f;
+		OriginalLength = 0.f;
 		TimeLeft = 0.f;
-		Alpha = 0.f;
+		TextAlpha = 0.f;
+		Scale = 1.f;
+		InitialDamagedActorLocation = FVector(0);
+		InitialDamagedActorProjection = FVector(9999); //Start at some impossible value as an initial state so we can test for initial state
 		DisplayLocation = FVector2D(0);
+		DisplayLocationOffset = FVector2D(0);
 		DamagedActor = nullptr;
-		DamagedActorOffset = FVector(0);
 		IsHealing = true;
 		IsCritical = true;
 		MarkedForDeletion = true;
@@ -36,19 +40,31 @@ struct FHWFloatingDamage
 		float DamageTextLength;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Text")
+		float OriginalLength;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Text")
 		float TimeLeft;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Text")
-		float Alpha;
+		float TextAlpha;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Text")
+		float Scale;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Text")
+		FVector InitialDamagedActorLocation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Text")
+		FVector InitialDamagedActorProjection;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Text")
 		FVector2D DisplayLocation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Text")
-		AActor* DamagedActor;
+		FVector2D DisplayLocationOffset;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Text")
-		FVector DamagedActorOffset;
+		AActor* DamagedActor;	
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Text")
 		bool IsHealing;
@@ -78,9 +94,19 @@ public:
 	AHWHUD();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Damage")
-		UFont* FloatingDamageFont;
+		UCurveFloat* FloatingDamageScaleCurve;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Damage")
+		UCurveFloat* FloatingDamageSpeedCurve;
+	/** This setting is ignored if FloatingDamageSpeedCurve is set */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Damage")
 		FVector2D FloatingDamageSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Damage")
+		UCurveFloat* FloatingDamageTextAlphaCurve;
+	/** This setting is ignored if FloatingDamageTextAlphaCurve is set */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Damage")
+		float FloatingDamageFadeOutSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Damage")
+		UFont* FloatingDamageFont;	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Damage")
 		FLinearColor FloatingDamageFontColor;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Damage")
@@ -94,14 +120,22 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Damage")
 		UFont* FloatingDamageOutlineFont;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Damage")
-		float FloatingDamageMinimumDisplayTime;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Damage")
-		float FloatingDamageFadeOutSpeed;
+		float FloatingDamageMinimumDisplayTime;	
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Critical Damage")
-		UFont* FloatingCriticalDamageFont;
+		UCurveFloat* FloatingCriticalDamageScaleCurve;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Critical Damage")
+		UCurveFloat* FloatingCriticalDamageSpeedCurve;
+	/** This setting is ignored if FloatingCriticalDamageSpeedCurve is set */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Critical Damage")
 		FVector2D FloatingCriticalDamageSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Critical Damage")
+		UCurveFloat* FloatingCriticalDamageTextAlphaCurve;
+	/** This setting is ignored if FloatingCriticalDamageTextAlphaCurve is set */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Critical Damage")
+		float FloatingCriticalDamageFadeOutSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Critical Damage")
+		UFont* FloatingCriticalDamageFont;	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Critical Damage")
 		FLinearColor FloatingCriticalDamageFontColor;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Critical Damage")
@@ -115,9 +149,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Critical Damage")
 		UFont* FloatingCriticalDamageOutlineFont;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Critical Damage")
-		float FloatingCriticalDamageMinimumDisplayTime;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Critical Damage")
-		float FloatingCriticalDamageFadeOutSpeed;
+		float FloatingCriticalDamageMinimumDisplayTime;	
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Floating Healing")
 		UFont* FloatingHealingFont;
@@ -162,7 +194,7 @@ public:
 		float FloatingCriticalHealingFadeOutSpeed;
 
 	UFUNCTION(BlueprintCallable, Category = "Damage")
-		void AddFloatingDamageItem(FString DamageText, AActor* DamagedActor, FVector DamagedActorOffset, bool IsHealing = false, bool IsCritical = false, bool ShowDropShadow = false, bool ShowOutline = false);
+		void AddFloatingDamageItem(FString DamageText, AActor* DamagedActor, FVector2D InitialDisplayLocationOffset, bool IsHealing = false, bool IsCritical = false, bool ShowDropShadow = false, bool ShowOutline = false);
 
 	UFUNCTION(BlueprintCallable, Category = "Damage")
 		void CleanUpFloatingDamageItems();

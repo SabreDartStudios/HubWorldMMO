@@ -10,6 +10,8 @@
 
 AHWGASPlayerCharacter::AHWGASPlayerCharacter()
 {
+	bIsTransferringBetweenZones = false;
+
 	//For players we will use Mixed mode to replicate GE's to the owning client
 	GetAbilitySystemComponent()->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 
@@ -182,4 +184,14 @@ void AHWGASPlayerCharacter::AbilityInputTagReleased(FGameplayTag InputTag)
 	{
 		ASC->AbilityInputTagReleased(InputTag);
 	}
+}
+
+void AHWGASPlayerCharacter::SetIsTransferringBetweenZones(bool bSetIsTransferringBetweenZones)
+{
+	bIsTransferringBetweenZones = bSetIsTransferringBetweenZones;
+}
+
+bool AHWGASPlayerCharacter::GetIsTransferringBetweenZones()
+{
+	return bIsTransferringBetweenZones;
 }
