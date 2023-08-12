@@ -51,7 +51,8 @@ void AHWCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 FString AHWCharacter::SerializeBaseCharacterStats()
 {
 	FString SerializedBaseCharacterStats = "";
-	if (FJsonObjectConverter::UStructToJsonObjectString(BaseCharacterStats, SerializedBaseCharacterStats))
+	if (FJsonObjectConverter::UStructToJsonObjectString(BaseCharacterStats, SerializedBaseCharacterStats, 
+		0i64, 0i64, 0, nullptr, false))
 	{
 		return SerializedBaseCharacterStats;
 	}
@@ -68,7 +69,8 @@ void AHWCharacter::LoadBaseCharacterStatsFromJSON(FString BaseCharacterStatsJSON
 FString AHWCharacter::SerializeBaseCharacterSkills()
 {
 	FString SerializedBaseCharacterSkills = "";
-	if (FJsonObjectConverter::UStructToJsonObjectString(BaseCharacterSkills, SerializedBaseCharacterSkills))
+	if (FJsonObjectConverter::UStructToJsonObjectString(BaseCharacterSkills, SerializedBaseCharacterSkills, 
+		0i64, 0i64, 0, 	nullptr, false))
 	{
 		return SerializedBaseCharacterSkills;
 	}
@@ -85,7 +87,8 @@ void AHWCharacter::LoadBaseCharacterSkillsFromJSON(FString BaseCharacterSkillsJS
 FString AHWCharacter::SerializeCharacterExperience()
 {
 	FString SerializedCharacterExperience = "";
-	if (FJsonObjectConverter::UStructToJsonObjectString(CharacterExperience, SerializedCharacterExperience))
+	if (FJsonObjectConverter::UStructToJsonObjectString(CharacterExperience, SerializedCharacterExperience, 
+		0i64, 0i64, 0, 	nullptr, false))
 	{
 		return SerializedCharacterExperience;
 	}

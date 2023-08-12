@@ -46,6 +46,8 @@ void UHWCombatAttributeSet::SetupGameplayTags()
 	WetTag = FGameplayTag::RequestGameplayTag("Combat.State.Wet");
 	BurningTag = FGameplayTag::RequestGameplayTag("Combat.State.Burning");
 	ColdTag = FGameplayTag::RequestGameplayTag("Combat.State.Cold");
+	ElectrifiedTag = FGameplayTag::RequestGameplayTag("Combat.State.Electrified");
+
 	ChargedTag = FGameplayTag::RequestGameplayTag("Combat.State.Charged");
 	CriticalHitTag = FGameplayTag::RequestGameplayTag("Combat.Flags.CriticalHit");
 }
@@ -53,16 +55,18 @@ void UHWCombatAttributeSet::SetupGameplayTags()
 //This function is only called on the server
 bool UHWCombatAttributeSet::PreGameplayEffectExecute(struct FGameplayEffectModCallbackData& Data)
 {
-	float CritHitDamageMagnitude = 0.f;
-	if (Data.EvaluatedData.Attribute == GetCritHitDamageAttribute())
-	{
-		HandlePreExecuteEffectDamage(true, Data);
-	}
-
 	// Is Damage about to be applied?
 	if (Data.EvaluatedData.Attribute == GetDamageAttribute())
 	{
-		HandlePreExecuteEffectDamage(false, Data);
+		//If the damage is an Odd number, then this is a crit, otherwise it isn't
+		if ((int32)FMath::Floor(Data.EvaluatedData.Magnitude) % 2 == 1)
+		{
+			HandlePreExecuteEffectDamage(true, Data);
+		}
+		else
+		{
+			HandlePreExecuteEffectDamage(false, Data);
+		}
 	}
 
 	return true;
@@ -77,6 +81,8 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 	{
 		FGameplayTagContainer EffectTags;
 		Data.EffectSpec.GetAllAssetTags(EffectTags);
+		FGameplayTagContainer GrantedTags;
+		Data.EffectSpec.GetAllGrantedTags(GrantedTags);
 
 		//Get source attributes
 		UAbilitySystemComponent* SourceAbilitySystem = Data.EffectSpec.GetContext().GetOriginalInstigatorAbilitySystemComponent();
@@ -91,6 +97,9 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 		const UHWCombatAttributeSet* TargetCombatAttributes = TargetAbilitySystem->GetSet<UHWCombatAttributeSet>();
 
 		//Check for reactions
+		float VaporizeDamageMultiplier = 1.f;
+		float ElectrocuteDamageMultiplier = 1.f;
+		float MeltDamageMultiplier = 1.f;
 
 		//Reactions where the target is Burning
 		if (TargetAbilitySystem->HasMatchingGameplayTag(BurningTag))
@@ -103,7 +112,14 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 			//Melt
 			if (EffectTags.HasTag(IceDamageTag))
 			{
-
+				MeltDamageMultiplier = 1.3f;
+				//Remove Cold Tag from what is going to be applied
+				//Needs to be implemented
+				//Remove any gameplay effects that have the Burning Tag already granted
+				TargetAbilitySystem->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(BurningTag));
+				//Add Wet Tag
+				TargetAbilitySystem->AddLooseGameplayTag(WetTag);
+				TargetAbilitySystem->AddMinimalReplicationGameplayTag(WetTag);
 			}
 			//Firestorm
 			if (EffectTags.HasTag(LightningDamageTag))
@@ -135,10 +151,17 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 		//Reactions where the target is Cold
 		else if (TargetAbilitySystem->HasMatchingGameplayTag(ColdTag))
 		{
-			//Melt
+			//Melt - 1.3 times damage.  Applies Wet status.
 			if (EffectTags.HasTag(FireDamageTag))
 			{
-
+				MeltDamageMultiplier = 1.3f;
+				//Remove Burning Tag from what is going to be applied
+				//Needs to be implemented
+				//Remove any gameplay effects that have the Cold Tag already granted
+				TargetAbilitySystem->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(ColdTag));
+				//Add Wet Tag
+				TargetAbilitySystem->AddLooseGameplayTag(WetTag);
+				TargetAbilitySystem->AddMinimalReplicationGameplayTag(WetTag);
 			}
 			//Frozen
 			if (EffectTags.HasTag(WaterDamageTag))
@@ -152,8 +175,8 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 			}
 		}
 
-		//Reactions where the target is Charged
-		else if (TargetAbilitySystem->HasMatchingGameplayTag(ChargedTag))
+		//Reactions where the target is ElectrifiedTag
+		else if (TargetAbilitySystem->HasMatchingGameplayTag(ElectrifiedTag))
 		{
 			//Firestorm
 			if (EffectTags.HasTag(FireDamageTag))
@@ -182,7 +205,8 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 			}
 		}
 
-		float NewDamageMagnitude = Data.EvaluatedData.Magnitude;
+		//Apply damage multipliers
+		float NewDamageMagnitude = Data.EvaluatedData.Magnitude * VaporizeDamageMultiplier * ElectrocuteDamageMultiplier * MeltDamageMultiplier;
 
 		//If Defense is greater than zero, then reduce the damage by Defense as a percent (i.e. 0.05 Defense is a 5% reduction in incoming damage)
 		if (HWGetDefense() > 0.f)
@@ -211,12 +235,6 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 
 		//Set the new damage magnitude
 		Data.EvaluatedData.Magnitude = NewDamageMagnitude;
-
-		//This is CritHitDamage, so we need to convert it to Damage for the PostGameplayEffectExecute to apply
-		if (IsCritDamage)
-		{
-			Data.EvaluatedData.Attribute = DamageProperty;
-		}
 	}
 }
 
@@ -276,7 +294,6 @@ void UHWCombatAttributeSet::GetLifetimeReplicatedProps(TArray< FLifetimeProperty
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, Constitution, COND_OwnerOnly, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, CritRate, COND_OwnerOnly, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, CritDamage, COND_OwnerOnly, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, CritHitDamage, COND_OwnerOnly, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, Attack, COND_OwnerOnly, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHWCombatAttributeSet, Defense, COND_OwnerOnly, REPNOTIFY_Always);
 
