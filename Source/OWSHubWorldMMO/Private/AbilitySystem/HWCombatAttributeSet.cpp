@@ -8,7 +8,9 @@
 #include "GameplayEffect.h"
 #include "GameplayTagsModule.h"
 #include "GameplayEffectExtension.h"
+#include "Kismet/GameplayStatics.h"
 #include "./Character/HWGASCharacter.h"
+#include "./Game/HWGameMode.h"
 
 UHWCombatAttributeSet::UHWCombatAttributeSet()
 {
@@ -31,7 +33,22 @@ UHWCombatAttributeSet::UHWCombatAttributeSet()
 	InitCritRate(1.0f);
 	InitCritDamage(0.5f);
 
+	SetupGameplayEffects();
 	SetupGameplayTags();
+}
+
+void UHWCombatAttributeSet::SetupGameplayEffects()
+{
+	UWorld* const World = GEngine->GetWorldFromContextObject(this, EGetWorldErrorMode::LogAndReturnNull);
+	if (World)
+	{
+		AHWGameMode* HWGameMode = Cast<AHWGameMode>(World->GetAuthGameMode());
+
+		if (HWGameMode)
+		{
+			ApplyWetGameplayEffect = HWGameMode->ApplyWetGameplayEffect;
+		}
+	}
 }
 
 void UHWCombatAttributeSet::SetupGameplayTags()
@@ -86,6 +103,7 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 
 		//Get source attributes
 		UAbilitySystemComponent* SourceAbilitySystem = Data.EffectSpec.GetContext().GetOriginalInstigatorAbilitySystemComponent();
+		const UGameplayAbility* AbilityUsed = Data.EffectSpec.GetContext().GetAbility();
 		const UHWCombatAttributeSet* SourceCombatAttributes = SourceAbilitySystem->GetSet<UHWCombatAttributeSet>();
 
 		//Check who damaged us
@@ -101,6 +119,27 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 		float ElectrocuteDamageMultiplier = 1.f;
 		float MeltDamageMultiplier = 1.f;
 
+		bool bShouldApplyWetEffect = false;
+		bool bShouldApplyColdEffect = false;
+		bool bShouldApplyBurningEffect = false;
+		bool bShouldApplyLightningEffect = false;
+		if (EffectTags.HasTag(WaterDamageTag))
+		{
+			bShouldApplyWetEffect = true;
+		}
+		else if (EffectTags.HasTag(IceDamageTag))
+		{
+			bShouldApplyColdEffect = true;
+		}
+		else if (EffectTags.HasTag(FireDamageTag))
+		{
+			bShouldApplyBurningEffect = true;
+		}
+		else if (EffectTags.HasTag(LightningDamageTag))
+		{
+			bShouldApplyLightningEffect = true;
+		}
+
 		//Reactions where the target is Burning
 		if (TargetAbilitySystem->HasMatchingGameplayTag(BurningTag))
 		{
@@ -114,12 +153,14 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 			{
 				MeltDamageMultiplier = 1.3f;
 				//Remove Cold Tag from what is going to be applied
-				//Needs to be implemented
+				bShouldApplyColdEffect = false;
 				//Remove any gameplay effects that have the Burning Tag already granted
 				TargetAbilitySystem->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(BurningTag));
 				//Add Wet Tag
-				TargetAbilitySystem->AddLooseGameplayTag(WetTag);
-				TargetAbilitySystem->AddMinimalReplicationGameplayTag(WetTag);
+				//TargetAbilitySystem->AddLooseGameplayTag(WetTag);
+				//TargetAbilitySystem->AddMinimalReplicationGameplayTag(WetTag);
+				TargetAbilitySystem->ApplyGameplayEffectToSelf(ApplyWetGameplayEffect->GetDefaultObject<UGameplayEffect>(), 
+					1.f, TargetAbilitySystem->MakeEffectContext());
 			}
 			//Firestorm
 			if (EffectTags.HasTag(LightningDamageTag))
@@ -156,12 +197,14 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 			{
 				MeltDamageMultiplier = 1.3f;
 				//Remove Burning Tag from what is going to be applied
-				//Needs to be implemented
+				bShouldApplyBurningEffect = false;
 				//Remove any gameplay effects that have the Cold Tag already granted
 				TargetAbilitySystem->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(ColdTag));
 				//Add Wet Tag
-				TargetAbilitySystem->AddLooseGameplayTag(WetTag);
-				TargetAbilitySystem->AddMinimalReplicationGameplayTag(WetTag);
+				//TargetAbilitySystem->AddLooseGameplayTag(WetTag);
+				//TargetAbilitySystem->AddMinimalReplicationGameplayTag(WetTag);
+				TargetAbilitySystem->ApplyGameplayEffectToSelf(ApplyWetGameplayEffect->GetDefaultObject<UGameplayEffect>(), 
+					1.0f, TargetAbilitySystem->MakeEffectContext());
 			}
 			//Frozen
 			if (EffectTags.HasTag(WaterDamageTag))

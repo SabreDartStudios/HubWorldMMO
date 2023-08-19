@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayTagsModule.h"
+#include "GameplayEffect.h"
 #include "HWAttributeSet.h"
 #include "HWCombatAttributeSet.generated.h"
 
@@ -39,6 +40,9 @@ private:
 
     FGameplayTag CriticalHitTag;
 
+    TSubclassOf<UGameplayEffect> ApplyWetGameplayEffect;
+
+    void SetupGameplayEffects();
     void SetupGameplayTags();
     void HandlePreExecuteEffectDamage(bool IsCritDamage, struct FGameplayEffectModCallbackData& Data);
 

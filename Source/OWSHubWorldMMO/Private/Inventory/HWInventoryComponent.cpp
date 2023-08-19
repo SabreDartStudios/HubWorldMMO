@@ -173,9 +173,9 @@ void UHWInventoryComponent::AddDisplayItem(UHWInventoryDisplayItemObject* ItemTo
 	InventoryDisplayItems.Add(ItemToAdd);
 }
 
-void UHWInventoryComponent::RemoveDisplayItem(UHWInventoryDisplayItemObject* ItemToAdd)
+void UHWInventoryComponent::RemoveDisplayItem(UHWInventoryDisplayItemObject* ItemToRemove)
 {
-	InventoryDisplayItems.Remove(ItemToAdd);
+	InventoryDisplayItems.Remove(ItemToRemove);
 }
 
 void UHWInventoryComponent::ReloadDisplayItems()

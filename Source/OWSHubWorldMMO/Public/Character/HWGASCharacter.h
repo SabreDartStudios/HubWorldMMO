@@ -12,6 +12,55 @@
 #include "./AbilitySystem/HWAbilitySystemComponent.h"
 #include "HWGASCharacter.generated.h"
 
+//Row definition for the Combat State Icons
+USTRUCT()
+struct FCombatStateIconsDataTableRow : public FTableRowBase
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+	FCombatStateIconsDataTableRow()
+	{
+
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat State")
+		FGameplayTag CombatStateTag;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat State")
+		TSoftObjectPtr<UTexture2D> Icon;
+};
+
+//Row definition for the combined runtime and setup data for displaying the combat state icons in the UI
+USTRUCT(BlueprintType, Blueprintable)
+struct FHWCombatStateIconDisplayItem
+{
+	GENERATED_USTRUCT_BODY()
+
+		FHWCombatStateIconDisplayItem()
+	{
+
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat State")
+		FGameplayTag CombatStateTag;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat State")
+		TSoftObjectPtr<UTexture2D> ItemIcon;
+
+};
+
+//UObject to contain the combat state icon row struct (this is required by the UI system)
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
+class OWSHUBWORLDMMO_API UHWCombatStateDisplayItemObject : public UObject
+{
+	GENERATED_BODY()
+
+public:
+	FHWCombatStateIconDisplayItem Data;
+
+};
+
 /**
  * 
  */
@@ -69,6 +118,24 @@ public:
 	
 	void OnUIRelatedTagsChanged(const FGameplayTag Tag, int32 NewCount);
 
+	//UI Combat State
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Combat State")
+		UDataTable* CombatStateIcons;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat State")
+		TArray<UHWCombatStateDisplayItemObject*> CombatStateDisplayItems;
+
+	UFUNCTION(BlueprintCallable, Category = "Combat State")
+		void AddCombatStateDisplayItem(UHWCombatStateDisplayItemObject* ItemToRemove);
+
+	UFUNCTION(BlueprintCallable, Category = "Combat State")
+		void RemoveCombatStateDisplayItem(UHWCombatStateDisplayItemObject* ItemToAdd);
+
+	UFUNCTION(BlueprintCallable, Category = "Combat State")
+		void ReloadCombatStateDisplayItems();
+
+	FCombatStateIconsDataTableRow* FindCombatStateIconsDataTableRowFromGameplayTag(FGameplayTag GameplayTagToSearchFor);
+
 	//Gameplay Tags
 	FGameplayTag NormalAbility1CooldownTag;
 	FGameplayTag BurningStateTag;
@@ -80,6 +147,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	virtual void ReloadUIForCombatStateDisplayItems();
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -90,6 +159,11 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 
 	virtual void OnRep_Controller() override;
+
+	virtual void WetTagChanged(const FGameplayTag Tag, int32 NewCount);
+	virtual void ColdTagChanged(const FGameplayTag Tag, int32 NewCount);
+	virtual void BurningTagChanged(const FGameplayTag Tag, int32 NewCount);
+	virtual void CombatStateTagChanged(const FGameplayTag Tag, int32 NewCount);
 
 protected:
 
