@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayTagsModule.h"
+#include "GameplayEffect.h"
 #include "HWAttributeSet.h"
 #include "HWCombatAttributeSet.generated.h"
 
@@ -29,6 +30,8 @@ private:
     FGameplayTag WetTag;
     FGameplayTag BurningTag;
     FGameplayTag ColdTag;
+    FGameplayTag ElectrifiedTag;
+
     FGameplayTag ChargedTag;
     FGameplayTag FirestormTag;
     FGameplayTag SuperconductTag;
@@ -37,6 +40,9 @@ private:
 
     FGameplayTag CriticalHitTag;
 
+    TSubclassOf<UGameplayEffect> ApplyWetGameplayEffect;
+
+    void SetupGameplayEffects();
     void SetupGameplayTags();
     void HandlePreExecuteEffectDamage(bool IsCritDamage, struct FGameplayEffectModCallbackData& Data);
 
@@ -372,31 +378,6 @@ public:
         void HWInitCritDamage(float NewVal)
     {
         InitCritDamage(NewVal);
-    }
-
-    //CritHitDamage
-private:
-    UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_CritHitDamage, Category = CombatAttributes, Meta = (AllowPrivateAccess = true))
-        FGameplayAttributeData CritHitDamage;
-protected:
-    UFUNCTION()
-        void OnRep_CritHitDamage(const FGameplayAttributeData& OldCritHitDamage) { GAMEPLAYATTRIBUTE_REPNOTIFY(UHWCombatAttributeSet, CritHitDamage, OldCritHitDamage); }
-public:
-    ATTRIBUTE_ACCESSORS(UHWCombatAttributeSet, CritHitDamage)
-        UFUNCTION(BlueprintCallable, Category = CombatAttributes)
-        float HWGetCritHitDamage() const
-    {
-        return GetCritHitDamage();
-    }
-    UFUNCTION(BlueprintCallable, Category = CombatAttributes)
-        void HWSetCritHitDamage(float NewVal)
-    {
-        SetCritHitDamage(NewVal);
-    }
-    UFUNCTION(BlueprintCallable, Category = CombatAttributes)
-        void HWInitCritHitDamage(float NewVal)
-    {
-        InitCritHitDamage(NewVal);
     }
 
     //Attack

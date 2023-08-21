@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "HWGASCharacter.h"
+#include "./UI/HWMobNameplateWidgetComponent.h"
 #include "HWGASMobCharacter.generated.h"
 
 /**
@@ -16,4 +17,10 @@ class OWSHUBWORLDMMO_API AHWGASMobCharacter : public AHWGASCharacter
 
 public:
 	AHWGASMobCharacter();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Nameplate")
+		UHWMobNameplateWidgetComponent* MobNameplateWidgetComponent;
+
+protected:
+	virtual void ReloadUIForCombatStateDisplayItems() override;
 };

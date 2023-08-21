@@ -2,6 +2,7 @@
 
 
 #include "./Character/HWGASCharacter.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayTagContainer.h"
 #include "GameplayTagsModule.h"
@@ -29,6 +30,22 @@ void AHWGASCharacter::BeginPlay()
 
 	NormalAbility1CooldownTag = FGameplayTag::RequestGameplayTag("Combat.Cooldown.NormalAbility1");
 	BurningStateTag = FGameplayTag::RequestGameplayTag("Combat.State.Burning");
+
+	//Code for displaying the actor name and local role
+	//UE_LOG(OWSHubWorldMMO, Warning, TEXT("AHWGASCharacter - %s - %s"), *UKismetSystemLibrary::GetDisplayName(this), 
+	//	*UEnum::GetValueAsString(TEXT("Engine.ENetRole"), GetLocalRole()));
+
+	//Only run on proxy clients
+	if (GetLocalRole() == ROLE_SimulatedProxy)
+	{
+		//Register combat state tag events for the mobs showing on the player or other players showing on the player
+		AbilitySystem->RegisterGenericGameplayTagEvent().AddUObject(this, &AHWGASCharacter::CombatStateTagChanged);
+	}
+	else if (GetLocalRole() == ROLE_AutonomousProxy)
+	{
+		//Register Cooldown tag event for the player client-side only.  This is for UI updates.
+		AbilitySystem->RegisterGenericGameplayTagEvent().AddUObject(this, &AHWGASCharacter::OnUIRelatedTagsChanged);
+	}
 }
 
 // Called every frame
@@ -44,12 +61,6 @@ void AHWGASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	UE_LOG(OWSHubWorldMMO, VeryVerbose, TEXT("AHWGASCharacter - SetupPlayerInputComponent Started"));
-
-	//AbilitySystem->RegisterGenericGameplayTagEvent().AddUObject(this, &AOWSCharacterWithAbilities::OnGameplayEffectTagCountChanged);
-
-	//Register Cooldown tag event for the client-side only.  This is for UI updates.
-	//AbilitySystem->RegisterGameplayTagEvent(NormalAbility1CooldownTag, EGameplayTagEventType::NewOrRemoved).AddUObject(this, &AHWGASCharacter::OnNormalAbility1CooldownTagChanged);
-	AbilitySystem->RegisterGenericGameplayTagEvent().AddUObject(this, &AHWGASCharacter::OnUIRelatedTagsChanged);
 }
 
 
@@ -69,6 +80,7 @@ void AHWGASCharacter::PossessedBy(AController* NewController)
 	}
 }
 
+//This won't be called on mobs, because they don't replicate their controller
 void AHWGASCharacter::OnRep_Controller()
 {
 	Super::OnRep_Controller();
@@ -152,6 +164,77 @@ void AHWGASCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& Ou
 }
 */
 
+//UI Combat State
+void AHWGASCharacter::AddCombatStateDisplayItem(UHWCombatStateDisplayItemObject* ItemToAdd)
+{
+	CombatStateDisplayItems.Add(ItemToAdd);
+	ReloadCombatStateDisplayItems();
+}
+
+void AHWGASCharacter::RemoveCombatStateDisplayItem(UHWCombatStateDisplayItemObject* ItemToRemove)
+{
+	//Look up full ItemToRemove based on just the Gameplay Tag
+	FGameplayTag GameplayTagToRemove = ItemToRemove->Data.CombatStateTag;
+	
+	//Loop through CombatStateDisplayItems and find the one to remove based on the GameplayTag
+	int32 indexToRemove = -1;
+	for (int indexToCheck=0; indexToCheck < CombatStateDisplayItems.Num(); indexToCheck++)
+	{
+		if (CombatStateDisplayItems[indexToCheck]->Data.CombatStateTag == GameplayTagToRemove)
+		{
+			indexToRemove = indexToCheck;
+		}
+	}
+
+	//If we found a match entry, remove it
+	if (indexToRemove > -1)
+	{
+		CombatStateDisplayItems.RemoveAt(indexToRemove);
+		ReloadCombatStateDisplayItems();
+	}
+}
+
+void AHWGASCharacter::ReloadCombatStateDisplayItems()
+{
+	//Only allow this to run on the client side
+	if (HasAuthority())
+	{
+		return;
+	}
+
+	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWGASCharacter - ReloadCombatStateDisplayItems Started on the Client Side"));
+	
+	for (auto& CombatStateDisplayItem : CombatStateDisplayItems)
+	{
+		FCombatStateIconsDataTableRow* FoundDataTableEntry = FindCombatStateIconsDataTableRowFromGameplayTag(
+			CombatStateDisplayItem->Data.CombatStateTag);
+
+		if (FoundDataTableEntry)
+		{		
+			CombatStateDisplayItem->Data.ItemIcon = FoundDataTableEntry->Icon;
+		}
+	}
+
+	ReloadUIForCombatStateDisplayItems();
+}
+
+FCombatStateIconsDataTableRow* AHWGASCharacter::FindCombatStateIconsDataTableRowFromGameplayTag(FGameplayTag GameplayTagToSearchFor)
+{
+	FCombatStateIconsDataTableRow* FoundItemType =
+		CombatStateIcons->FindRow<FCombatStateIconsDataTableRow>(FName(GameplayTagToSearchFor.ToString()), "");
+	if (FoundItemType)
+	{
+		return FoundItemType;
+	}
+
+	return nullptr;
+}
+
+void AHWGASCharacter::ReloadUIForCombatStateDisplayItems()
+{
+
+}
+
 //Events
 
 //Respond to UI related tag changes
@@ -181,5 +264,79 @@ void AHWGASCharacter::OnUIRelatedTagsChanged(const FGameplayTag Tag, int32 NewCo
 			UE_LOG(OWSHubWorldMMO, Error, TEXT("BurningStateTag - Added"));
 		}
 	}
+}
 
+//Fires on proxy clients to handle combat.state tags when they are added or removed
+void AHWGASCharacter::CombatStateTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	//We only want to process Combat.State tags
+	if (!Tag.ToString().Contains("Combat.State."))
+		return;
+
+	//Lookup the tag in our Combat State Icons Data Table
+	FCombatStateIconsDataTableRow* FoundDataTableEntry = FindCombatStateIconsDataTableRowFromGameplayTag(
+		Tag);
+
+	//If the tag isn't in the table don't continue
+	if (!FoundDataTableEntry)
+		return;
+
+	if (NewCount == 0)
+	{
+		UE_LOG(OWSHubWorldMMO, Error, TEXT("Removed"));
+
+		UHWCombatStateDisplayItemObject* CombatStateDisplayItemObject = NewObject<UHWCombatStateDisplayItemObject>();
+		CombatStateDisplayItemObject->Data.CombatStateTag = Tag;
+		RemoveCombatStateDisplayItem(CombatStateDisplayItemObject);
+	}
+	else //It was added
+	{
+		UE_LOG(OWSHubWorldMMO, Error, TEXT("Added"));
+
+		UHWCombatStateDisplayItemObject* CombatStateDisplayItemObject = NewObject<UHWCombatStateDisplayItemObject>();
+		CombatStateDisplayItemObject->Data.CombatStateTag = Tag;
+		AddCombatStateDisplayItem(CombatStateDisplayItemObject);
+	}
+}
+
+//Fires on proxy clients when the Wet tag is added or removed
+void AHWGASCharacter::WetTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	//It was removed
+	if (NewCount == 0)
+	{
+		UE_LOG(OWSHubWorldMMO, Error, TEXT("WetStateTag - Removed"));
+	}
+	else //It was added
+	{
+		UE_LOG(OWSHubWorldMMO, Error, TEXT("WetStateTag - Added"));
+	}
+}
+
+//Fires on proxy clients when the Cold tag is added or removed
+void AHWGASCharacter::ColdTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	//It was removed
+	if (NewCount == 0)
+	{
+		UE_LOG(OWSHubWorldMMO, Error, TEXT("ColdStateTag - Removed"));
+	}
+	else //It was added
+	{
+		UE_LOG(OWSHubWorldMMO, Error, TEXT("ColdStateTag - Added"));
+	}
+}
+
+//Fires on proxy clients when the Burning tag is added or removed
+void AHWGASCharacter::BurningTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	//It was removed
+	if (NewCount == 0)
+	{
+		UE_LOG(OWSHubWorldMMO, Error, TEXT("BurningStateTag - Removed"));
+	}
+	else //It was added
+	{
+		UE_LOG(OWSHubWorldMMO, Error, TEXT("BurningStateTag - Added"));
+	}
 }

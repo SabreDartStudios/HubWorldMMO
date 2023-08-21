@@ -265,7 +265,7 @@ public:
 		void AddDisplayItem(UHWInventoryDisplayItemObject* ItemToAdd);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-		void RemoveDisplayItem(UHWInventoryDisplayItemObject* ItemToAdd);
+		void RemoveDisplayItem(UHWInventoryDisplayItemObject* ItemToRemove);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 		void ReloadDisplayItems();

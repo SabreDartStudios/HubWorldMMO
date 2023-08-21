@@ -12,27 +12,33 @@ UHWAT_WaitMultiTraceForTargets::UHWAT_WaitMultiTraceForTargets(const FObjectInit
 	bCombineTargets = true;
 }
 
-UHWAT_WaitMultiTraceForTargets* UHWAT_WaitMultiTraceForTargets::WaitMultiTraceForTargets(UGameplayAbility* OwningAbility, FName TaskInstanceName, TArray<FTraceStep> TraceSteps, bool CombineTargets)
+UHWAT_WaitMultiTraceForTargets* UHWAT_WaitMultiTraceForTargets::WaitMultiTraceForTargets(UGameplayAbility* OwningAbility, FName TaskInstanceName, 
+	TArray<FTraceStep> TraceSteps, bool CombineTargets, bool StopOnFirstHit)
 {
 	UHWAT_WaitMultiTraceForTargets* MyObj = NewAbilityTask<UHWAT_WaitMultiTraceForTargets>(OwningAbility, TaskInstanceName);		//Register for task list here, providing a given FName as a key
 	MyObj->OwningAbility = OwningAbility;
 	MyObj->TraceSteps = TraceSteps;
 	MyObj->bCombineTargets = CombineTargets;
+	MyObj->bStopOnFirstHit = StopOnFirstHit;
 	return MyObj;
 }
 
 void UHWAT_WaitMultiTraceForTargets::Activate()
 {
+	const FGameplayAbilityActorInfo* Info = (OwningAbility ? OwningAbility->GetCurrentActorInfo() : nullptr);
+	AvatarActorTransform = Info->AvatarActor->GetTransform();
+
 	TimeSinceStart = 0.f;
-	int32 CountOfTraceSteps = 0;
+	CountOfTraceSteps = 0;
 	DelayAtStart = 99.f;
-	for (auto TraceStep : TraceSteps)
+	for (FTraceStep& TraceStep : TraceSteps)
 	{
 		CountOfTraceSteps++;
 		if (TraceStep.StartTimeInSeconds < DelayAtStart)
 		{
 			DelayAtStart = TraceStep.StartTimeInSeconds;
 		}
+		TraceStep.StepNumber = CountOfTraceSteps;
 	}
 
 	if (CountOfTraceSteps < 1)
@@ -75,9 +81,10 @@ void UHWAT_WaitMultiTraceForTargets::TickTask(float DeltaTime)
 			//If we are combining the targets, let's return our targets to the Valid Data callback.
 			if (bCombineTargets)
 			{
-				OnTargetDataReadyCallback(TargetsCollected);
+				TargetsCollected = MakeTargetData(AllHitActors);
+				OnTargetDataReadyCallback(TargetsCollected, false);
 			}
-			else //If we aren't combining targets, we call Finished
+			else
 			{
 				Finished.Broadcast();
 			}
@@ -92,9 +99,7 @@ void UHWAT_WaitMultiTraceForTargets::PerformTrace(const FTraceStep& TraceStep)
 	const FGameplayAbilityActorInfo* Info = (OwningAbility ? OwningAbility->GetCurrentActorInfo() : nullptr);
 
 	//Calculate world offset
-	//FVector TraceOrigin = Info->AvatarActor->GetActorLocation() + TraceStep.OffsetFromOrigin;
-
-	FTransform TraceOrigin = UKismetMathLibrary::ComposeTransforms(FTransform(FRotator::ZeroRotator, TraceStep.OffsetFromOrigin, FVector::OneVector), Info->AvatarActor->GetTransform());
+	FTransform TraceOrigin = UKismetMathLibrary::ComposeTransforms(FTransform(FRotator::ZeroRotator, TraceStep.OffsetFromOrigin, FVector::OneVector), AvatarActorTransform);
 
 	//Declare an array to collect overlaps
 	TArray<FOverlapResult> Overlaps;
@@ -113,28 +118,55 @@ void UHWAT_WaitMultiTraceForTargets::PerformTrace(const FTraceStep& TraceStep)
 		}
 	}
 
-	TArray<TWeakObjectPtr<AActor>>	HitActors;
+	//Early out if there are no overlaps
+	if (Overlaps.Num() < 1)
+	{
+		return;
+	}
+
+	//Empty our list of actors hit this trace
+	ActorsHitThisTrace.Empty();
+
+	//Loop through overlaps
 	for (int32 i = 0; i < Overlaps.Num(); ++i)
 	{
 		//Should this check to see if these pawns are in the AimTarget list?
 		APawn* PawnActor = Cast<APawn>(Overlaps[i].GetActor());
+
 		//Make sure the reference is valid, we aren't inserting a duplicate target, and we aren't hitting ourselves if we don't want to.
-		if (PawnActor && !HitActors.Contains(PawnActor) && (PawnActor != Info->AvatarActor || TraceStep.bCanHitSelf))
+		if (PawnActor && !AllHitActors.Contains(PawnActor) && (PawnActor != Info->AvatarActor || TraceStep.bCanHitSelf))
 		{
-			HitActors.Add(PawnActor);
+			ActorsHitThisTrace.Add(PawnActor);
+			AllHitActors.Add(PawnActor);
 			if (TraceStep.bDebug)
 			{
 				DrawDebugLine(GetWorld(), TraceOrigin.GetTranslation(), PawnActor->GetActorLocation(), FColor::Yellow, false, 10, 2, 2);
 				DrawDebugPoint(GetWorld(), PawnActor->GetActorLocation(), 30, FColor::Green, false, 10, 3);
-				UE_LOG(LogTemp, Error, TEXT("Drawing Hit!"));
+			}
+
+			//If we already hit the MaxNumberOfTargetsToHit, stop adding more targets to AllHitActors
+			if (AllHitActors.Num() >= TraceStep.MaxNumberOfTargetsToHit)
+			{
+				break;
 			}
 		}
 	}
 
-	TargetsCollected = MakeTargetData(HitActors);
+	if (bStopOnFirstHit && TraceStep.StepNumber < CountOfTraceSteps)
+	{
+		TargetsCollected = MakeTargetData(ActorsHitThisTrace);
+		OnTargetDataReadyCallback(TargetsCollected, true);
+	}
+
+	//If we aren't combining targets, lets return what we collected
+	if (!bCombineTargets)
+	{
+		TargetsCollected = MakeTargetData(ActorsHitThisTrace);
+		OnTargetDataReadyCallback(TargetsCollected, false);
+	}
 }
 
-void UHWAT_WaitMultiTraceForTargets::OnTargetDataReadyCallback(const FGameplayAbilityTargetDataHandle& Data)
+void UHWAT_WaitMultiTraceForTargets::OnTargetDataReadyCallback(const FGameplayAbilityTargetDataHandle& Data, const bool bStoppedOnFirstHit)
 {
 	check(AbilitySystemComponent.Get());
 	if (!Ability)
@@ -142,15 +174,16 @@ void UHWAT_WaitMultiTraceForTargets::OnTargetDataReadyCallback(const FGameplayAb
 		return;
 	}
 
-	const FGameplayAbilityTargetData* AbilityTargetData = Data.Get(0);
-	TArray<TWeakObjectPtr<AActor>> ActorsHit = AbilityTargetData->GetActors();
+	//const FGameplayAbilityTargetData* AbilityTargetData = Data.Get(0);
+	//TArray<TWeakObjectPtr<AActor>> ActorsHit = AbilityTargetData->GetActors();
 
-	ValidData.Broadcast(Data);
+	ValidData.Broadcast(Data, bStoppedOnFirstHit);
 
-	//If we are combining the targets, then end the task after we return them.  If we are aren't combining the targets then there may be additional calls to the ValidData delegate
-	if (bCombineTargets)
+	//If we are combining the targets or stopping on first hit, then end the task after we return them.  
+	//If we are aren't combining the targets or stopping on firt hit then there may be additional calls to the ValidData delegate
+	if (bCombineTargets || bStopOnFirstHit)
 	{
-		//Call Finished and then end the tasks
+		//Call Finished and then end the task
 		Finished.Broadcast();
 		EndTask();
 	}

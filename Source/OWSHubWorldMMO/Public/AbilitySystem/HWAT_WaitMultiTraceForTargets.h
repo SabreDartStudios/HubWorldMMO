@@ -6,7 +6,7 @@
 #include "Abilities/Tasks/AbilityTask.h"
 #include "HWAT_WaitMultiTraceForTargets.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FWaitMultiTraceForTargetsDelegate, const FGameplayAbilityTargetDataHandle&, Data);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FWaitMultiTraceForTargetsDelegate, const FGameplayAbilityTargetDataHandle&, Data, const bool, bStoppedOnFirstHit);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FWaitMultiTraceForTargetsFinishedDelegate);
 
 USTRUCT(BlueprintType, Blueprintable)
@@ -22,6 +22,7 @@ struct FTraceStep
 		bActivated = false;
 		bDisabled = false;
 		bDebug = false;
+		MaxNumberOfTargetsToHit = 1;
 	}
 
 	/** How many seconds to wait to activate this instant one-frame trace.*/
@@ -46,6 +47,9 @@ struct FTraceStep
 	/** Can this trace hit the attacker?*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Trace")
 		bool bCanHitSelf;
+	/** Only hit his many targets per trace */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Trace")
+		int32 MaxNumberOfTargetsToHit;
 	/** For debugging.  Disables this step without having to remove it from the array.*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Trace")
 		bool bDisabled;
@@ -53,6 +57,7 @@ struct FTraceStep
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Trace")
 		bool bDebug;
 
+	int32 StepNumber;
 	bool bActivated;
 };
 
@@ -66,7 +71,7 @@ class OWSHUBWORLDMMO_API UHWAT_WaitMultiTraceForTargets : public UAbilityTask
 
 public:
 	UFUNCTION(BlueprintCallable, meta = (HidePin = "OwningAbility", DefaultToSelf = "OwningAbility", BlueprintInternalUseOnly = "true", HideSpawnParms = "Instigator"), Category = "Ability|Tasks")
-		static UHWAT_WaitMultiTraceForTargets* WaitMultiTraceForTargets(UGameplayAbility* OwningAbility, FName TaskInstanceName, TArray<FTraceStep> TraceSteps, bool CombineTargets);
+		static UHWAT_WaitMultiTraceForTargets* WaitMultiTraceForTargets(UGameplayAbility* OwningAbility, FName TaskInstanceName, TArray<FTraceStep> TraceSteps, bool CombineTargets, bool StopOnFirstHit);
 
 	UPROPERTY(BlueprintAssignable)
 		FWaitMultiTraceForTargetsDelegate ValidData;
@@ -75,7 +80,7 @@ public:
 		FWaitMultiTraceForTargetsFinishedDelegate Finished;
 
 	UFUNCTION()
-		void OnTargetDataReadyCallback(const FGameplayAbilityTargetDataHandle& Data);
+		void OnTargetDataReadyCallback(const FGameplayAbilityTargetDataHandle& Data, const bool bStoppedOnFirstHit);
 
 	/** List of traces to perform.*/
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Settings)
@@ -84,6 +89,10 @@ public:
 	/** When set to true, combine all targets and only hit each one once.  When set to false, count each trace as a separate group of targets hit.*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Trace")
 		bool bCombineTargets;
+
+	/** When set to true, the task will end when the first trace hits */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Trace")
+		bool bStopOnFirstHit;
 
 
 	void TickTask(float DeltaTime) override;
@@ -94,13 +103,15 @@ protected:
 	float TimeSinceStart;
 	UGameplayAbility* OwningAbility;
 	FGameplayAbilityTargetDataHandle TargetsCollected;
-
+	TArray<TWeakObjectPtr<AActor>>	AllHitActors;
+	TArray<TWeakObjectPtr<AActor>>	ActorsHitThisTrace;
+	float DelayAtStart;
+	int32 CountOfTraceSteps;
+	FTransform AvatarActorTransform;
 	FGameplayAbilityTargetingLocationInfo StartLocation;
 
 	void Activate() override;
 
 	virtual void PerformTrace(const FTraceStep& TraceStep);
 
-private:
-	float DelayAtStart;
 };

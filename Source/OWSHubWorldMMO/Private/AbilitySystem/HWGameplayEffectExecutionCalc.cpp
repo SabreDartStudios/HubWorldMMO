@@ -6,21 +6,19 @@
 
 struct HWDamageStatics
 {
-	FGameplayEffectAttributeCaptureDefinition DamageDef;
-	FGameplayEffectAttributeCaptureDefinition StrengthDef;
 	FGameplayEffectAttributeCaptureDefinition AttackDef;
+	FGameplayEffectAttributeCaptureDefinition DefenseDef;
+	FGameplayEffectAttributeCaptureDefinition MaxHealthDef;
 	FGameplayEffectAttributeCaptureDefinition CritRateDef;
 	FGameplayEffectAttributeCaptureDefinition CritDamageDef;
-	FGameplayEffectAttributeCaptureDefinition CritHitDamageDef;
 
 	HWDamageStatics()
 	{
-		DamageDef = FGameplayEffectAttributeCaptureDefinition(UHWCombatAttributeSet::GetDamageAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
-		StrengthDef = FGameplayEffectAttributeCaptureDefinition(UHWCombatAttributeSet::GetStrengthAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
 		AttackDef = FGameplayEffectAttributeCaptureDefinition(UHWCombatAttributeSet::GetAttackAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
+		DefenseDef = FGameplayEffectAttributeCaptureDefinition(UHWCombatAttributeSet::GetDefenseAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
+		MaxHealthDef = FGameplayEffectAttributeCaptureDefinition(UHWCombatAttributeSet::GetMaxHealthAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
 		CritRateDef = FGameplayEffectAttributeCaptureDefinition(UHWCombatAttributeSet::GetCritRateAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
 		CritDamageDef = FGameplayEffectAttributeCaptureDefinition(UHWCombatAttributeSet::GetCritDamageAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
-		CritHitDamageDef = FGameplayEffectAttributeCaptureDefinition(UHWCombatAttributeSet::GetCritHitDamageAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
 	}
 };
 
@@ -32,12 +30,11 @@ static const HWDamageStatics& DamageStatics()
 
 UHWGameplayEffectExecutionCalc::UHWGameplayEffectExecutionCalc()
 {
-	RelevantAttributesToCapture.Add(DamageStatics().DamageDef);
-	RelevantAttributesToCapture.Add(DamageStatics().StrengthDef);
 	RelevantAttributesToCapture.Add(DamageStatics().AttackDef);	
+	RelevantAttributesToCapture.Add(DamageStatics().DefenseDef);
+	RelevantAttributesToCapture.Add(DamageStatics().MaxHealthDef);
 	RelevantAttributesToCapture.Add(DamageStatics().CritRateDef);
 	RelevantAttributesToCapture.Add(DamageStatics().CritDamageDef);
-	RelevantAttributesToCapture.Add(DamageStatics().CritHitDamageDef);
 }
 
 
@@ -57,45 +54,71 @@ void UHWGameplayEffectExecutionCalc::Execute_Implementation(const FGameplayEffec
 	FAggregatorEvaluateParameters EvaluationParameters;
 	EvaluationParameters.SourceTags = SourceTags;
 	EvaluationParameters.TargetTags = TargetTags;
-
-	float Damage = 0.0f;
-	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().DamageDef, EvaluationParameters, Damage);
-	float Strength = 0.0f;
-	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().StrengthDef, EvaluationParameters, Strength);
+	
 	float Attack = 0.0f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().AttackDef, EvaluationParameters, Attack);
+	float Defense = 0.0f;
+	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().DefenseDef, EvaluationParameters, Defense);
+	float MaxHealth = 0.0f;
+	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().MaxHealthDef, EvaluationParameters, MaxHealth);
 	float CritRate = 0.0f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().CritRateDef, EvaluationParameters, CritRate);
 	float CritDamage = 0.0f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().CritDamageDef, EvaluationParameters, CritDamage);
-	float CritHitDamage = 0.0f;
-	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().CritHitDamageDef, EvaluationParameters, CritHitDamage);
 
 	//Clamp our values
-	Damage = FMath::Clamp(Damage, 0.01f, 100.f); //1% to 10,000%
-	Strength = FMath::Clamp(Strength, 5.0f, 15.f); //5 to 15
-	Attack = FMath::Clamp(Attack, 1.f, 10000.f); //1 to 10,000
+	Attack = FMath::Clamp(Attack, 0.f, 10000.f); //0 to 10,000
+	Defense = FMath::Clamp(Defense, 0.f, 10000.f); //0 to 10,000
+	MaxHealth = FMath::Clamp(MaxHealth, 0.f, 10000.f); //0 to 10,000
 	CritRate = FMath::Clamp(CritRate, 0.f, 1.f); //0 to 100%
 	CritDamage = FMath::Clamp(CritDamage, 0.f, 10.f); //0 to 1000%
-	CritHitDamage = 0.f;
 
 	//Roll to see if this is a Crit
 	bool bWasACrit = false;
-	if (FMath::FRand() <= CritRate)
+	if (FMath::FRand() <= (CritRate / 100.f))
 	{
 		bWasACrit = true;
 	}
 
-	float BaseDamage = Damage * Attack * (1.f + ((Strength - 10.f) / 10.f));
+	float BaseDamage = Attack + Defense + MaxHealth;
 	float AttackerSideCalculatedDamage = BaseDamage;
-	float AttackerSideCalculatedCritHitDamage = (bWasACrit ? BaseDamage * CritDamage : 0.f);
-	if (AttackerSideCalculatedDamage > 0.f)
+	float AttackerSideCalculatedCritHitDamage = (bWasACrit ? BaseDamage * (CritDamage / 100.f) : 0.f);
+
+	//Always round down to previous integer.  This is done because our odd/even checks below add 1 if needed
+	//This could potentially lead to noticeable problems in games with low damage outputs.  We will be using large damage values 
+	//and so this should not be an issue for us.
+	int32 AttackerSideTotalDamage = (int32)FMath::Floor(AttackerSideCalculatedDamage + AttackerSideCalculatedCritHitDamage);
+
+	//If the AttackerSideTotalDamage is zero or less, don't do anything
+	if (AttackerSideTotalDamage > 0)
 	{
-		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UHWCombatAttributeSet::GetDamageAttribute(), EGameplayModOp::Additive, AttackerSideCalculatedDamage));
+		//This was a critical hit
+		if (bWasACrit)
+		{
+			//The AttackerSideTotalDamage is an even number, so we need to add 1 to make it odd
+			if (AttackerSideTotalDamage % 2 == 0)
+			{
+				AttackerSideTotalDamage++; //Add 1 to make it an odd number.  Odd number damage values are critical hits
+			}
+		}
+		else //This is NOT a critical hit
+		{
+			//The AttackerSideTotalDamage is an odd number, so we need to add 1 to make it even
+			if (AttackerSideTotalDamage % 2 == 1)
+			{
+				AttackerSideTotalDamage++; //Add 1 to make it an even number.  Even number damage values are NOT critical hits
+			}
+		}
+
+		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UHWCombatAttributeSet::GetDamageAttribute(),
+			EGameplayModOp::Override, AttackerSideTotalDamage));
 	}
+
+	/*
 	//The critical hit damage is separated from the normal damage and applied on the CritHitDamage modifier.  This will allow our PreGameplayEffectExecute to handle it differently.
 	if (AttackerSideCalculatedCritHitDamage > 0.f)
 	{
 		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UHWCombatAttributeSet::GetCritHitDamageAttribute(), EGameplayModOp::Override, AttackerSideCalculatedCritHitDamage));
 	}
+	*/
 }
