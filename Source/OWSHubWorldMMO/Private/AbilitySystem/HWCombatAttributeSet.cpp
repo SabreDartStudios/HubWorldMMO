@@ -46,7 +46,13 @@ void UHWCombatAttributeSet::SetupGameplayEffects()
 
 		if (HWGameMode)
 		{
+			ApplyColdGameplayEffect = HWGameMode->ApplyColdGameplayEffect;
+			ApplyBurningGameplayEffect = HWGameMode->ApplyBurningGameplayEffect;
 			ApplyWetGameplayEffect = HWGameMode->ApplyWetGameplayEffect;
+			ApplyElectrifiedGameplayEffect = HWGameMode->ApplyElectrifiedGameplayEffect;
+
+			ApplyFrozenGameplayEffect = HWGameMode->ApplyFrozenGameplayEffect;
+			ApplyChargedGameplayEffect = HWGameMode->ApplyChargedGameplayEffect;
 		}
 	}
 }
@@ -66,6 +72,8 @@ void UHWCombatAttributeSet::SetupGameplayTags()
 	ElectrifiedTag = FGameplayTag::RequestGameplayTag("Combat.State.Electrified");
 
 	ChargedTag = FGameplayTag::RequestGameplayTag("Combat.State.Charged");
+	FrozenTag = FGameplayTag::RequestGameplayTag("Combat.State.Frozen");
+
 	CriticalHitTag = FGameplayTag::RequestGameplayTag("Combat.Flags.CriticalHit");
 }
 
@@ -122,7 +130,8 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 		bool bShouldApplyWetEffect = false;
 		bool bShouldApplyColdEffect = false;
 		bool bShouldApplyBurningEffect = false;
-		bool bShouldApplyLightningEffect = false;
+		bool bShouldApplyElectrifiedEffect = false;
+		
 		if (EffectTags.HasTag(WaterDamageTag))
 		{
 			bShouldApplyWetEffect = true;
@@ -137,7 +146,7 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 		}
 		else if (EffectTags.HasTag(LightningDamageTag))
 		{
-			bShouldApplyLightningEffect = true;
+			bShouldApplyElectrifiedEffect = true;
 		}
 
 		//Reactions where the target is Burning
@@ -146,9 +155,13 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 			//Vaporize
 			if (EffectTags.HasTag(WaterDamageTag))
 			{
-
+				VaporizeDamageMultiplier = 1.5f;
+				//Remove Wet Tag from what is going to be applied
+				bShouldApplyWetEffect = false;
+				//Remove any gameplay effects that have the Burning Tag already granted
+				TargetAbilitySystem->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(BurningTag));
 			}
-			//Melt
+			//Melt - 1.3 times damage. 
 			if (EffectTags.HasTag(IceDamageTag))
 			{
 				MeltDamageMultiplier = 1.3f;
@@ -156,11 +169,9 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 				bShouldApplyColdEffect = false;
 				//Remove any gameplay effects that have the Burning Tag already granted
 				TargetAbilitySystem->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(BurningTag));
-				//Add Wet Tag
+
 				//TargetAbilitySystem->AddLooseGameplayTag(WetTag);
 				//TargetAbilitySystem->AddMinimalReplicationGameplayTag(WetTag);
-				TargetAbilitySystem->ApplyGameplayEffectToSelf(ApplyWetGameplayEffect->GetDefaultObject<UGameplayEffect>(), 
-					1.f, TargetAbilitySystem->MakeEffectContext());
 			}
 			//Firestorm
 			if (EffectTags.HasTag(LightningDamageTag))
@@ -175,24 +186,41 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 			//Vaporize
 			if (EffectTags.HasTag(FireDamageTag))
 			{
-
+				VaporizeDamageMultiplier = 1.5f;
+				//Remove Burning Tag from what is going to be applied
+				bShouldApplyBurningEffect = false;
+				//Remove any gameplay effects that have the Wet Tag already granted
+				TargetAbilitySystem->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(WetTag));
 			}
-			//Frozen
+			//Frozen - Freeze in place
 			if (EffectTags.HasTag(IceDamageTag))
 			{
-
+				//Remove Cold Tag from what is going to be applied
+				bShouldApplyColdEffect = false;
+				//Remove any gameplay effects that have the Wet Tag already granted
+				TargetAbilitySystem->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(WetTag));
+				//Apply Frozen
+				TargetAbilitySystem->ApplyGameplayEffectToSelf(ApplyFrozenGameplayEffect->GetDefaultObject<UGameplayEffect>(),
+					1.0f, TargetAbilitySystem->MakeEffectContext());
 			}
-			//Electrocute
+			//Electrocute - 1.2 times damage and random chance to apply Charged status.
 			if (EffectTags.HasTag(LightningDamageTag))
 			{
-
+				ElectrocuteDamageMultiplier = 1.2f;
+				//Remove Electrified Tag from what is going to be applied
+				bShouldApplyElectrifiedEffect = false;
+				//Remove any gameplay effects that have the Wet Tag already granted
+				TargetAbilitySystem->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(WetTag));
+				//Chance to apply Charged
+				TargetAbilitySystem->ApplyGameplayEffectToSelf(ApplyChargedGameplayEffect->GetDefaultObject<UGameplayEffect>(),
+					1.0f, TargetAbilitySystem->MakeEffectContext());
 			}
 		}
 
 		//Reactions where the target is Cold
 		else if (TargetAbilitySystem->HasMatchingGameplayTag(ColdTag))
 		{
-			//Melt - 1.3 times damage.  Applies Wet status.
+			//Melt - 1.3 times damage. 
 			if (EffectTags.HasTag(FireDamageTag))
 			{
 				MeltDamageMultiplier = 1.3f;
@@ -200,21 +228,38 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 				bShouldApplyBurningEffect = false;
 				//Remove any gameplay effects that have the Cold Tag already granted
 				TargetAbilitySystem->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(ColdTag));
-				//Add Wet Tag
-				//TargetAbilitySystem->AddLooseGameplayTag(WetTag);
-				//TargetAbilitySystem->AddMinimalReplicationGameplayTag(WetTag);
-				TargetAbilitySystem->ApplyGameplayEffectToSelf(ApplyWetGameplayEffect->GetDefaultObject<UGameplayEffect>(), 
-					1.0f, TargetAbilitySystem->MakeEffectContext());
 			}
-			//Frozen
+			//Frozen - Freeze in place
 			if (EffectTags.HasTag(WaterDamageTag))
 			{
-
+				//Remove Wet Tag from what is going to be applied
+				bShouldApplyWetEffect = false;
+				//Remove any gameplay effects that have the Cold Tag already granted
+				TargetAbilitySystem->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(ColdTag));
+				//Apply Frozen
+				TargetAbilitySystem->ApplyGameplayEffectToSelf(ApplyFrozenGameplayEffect->GetDefaultObject<UGameplayEffect>(),
+					1.0f, TargetAbilitySystem->MakeEffectContext());
 			}
 			//Superconduct
 			if (EffectTags.HasTag(LightningDamageTag))
 			{
 
+			}
+		}
+
+		//Reactions where the target is Frozen
+		else if (TargetAbilitySystem->HasMatchingGameplayTag(FrozenTag))
+		{
+			//Melt - 1.3 times damage.  Applies Wet status.
+			if (EffectTags.HasTag(FireDamageTag))
+			{
+				MeltDamageMultiplier = 1.3f;
+				//Remove Burning Tag from what is going to be applied
+				bShouldApplyBurningEffect = false;
+				//Remove any gameplay effects that have the Frozen Tag already granted
+				TargetAbilitySystem->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(FrozenTag));
+				//Apply Wet Tag
+				bShouldApplyWetEffect = true;
 			}
 		}
 
@@ -229,7 +274,14 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 			//Electrocute
 			if (EffectTags.HasTag(WaterDamageTag))
 			{
-
+				ElectrocuteDamageMultiplier = 1.2f;
+				//Remove Wet Tag from what is going to be applied
+				bShouldApplyWetEffect = false;
+				//Remove any gameplay effects that have the Wet Tag already granted
+				TargetAbilitySystem->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(WetTag));
+				//Chance to apply Charged
+				TargetAbilitySystem->ApplyGameplayEffectToSelf(ApplyChargedGameplayEffect->GetDefaultObject<UGameplayEffect>(),
+					1.0f, TargetAbilitySystem->MakeEffectContext());
 			}
 			//Superconduct
 			if (EffectTags.HasTag(IceDamageTag))
@@ -237,15 +289,30 @@ void UHWCombatAttributeSet::HandlePreExecuteEffectDamage(bool IsCritDamage, stru
 
 			}
 		}
-
 		else //No reaction
 		{
-			if (EffectTags.HasTag(FireDamageTag) && MyCharacter->BurningEffect)
-			{
-				FGameplayEffectSpecHandle BurningEffectSpecHandle = TargetAbilitySystem->MakeOutgoingSpec(MyCharacter->BurningEffect, 1, TargetAbilitySystem->MakeEffectContext());
 
-				TargetAbilitySystem->ApplyGameplayEffectSpecToSelf(*BurningEffectSpecHandle.Data.Get());
-			}
+		}
+
+		if (bShouldApplyWetEffect)
+		{
+			TargetAbilitySystem->ApplyGameplayEffectToSelf(ApplyWetGameplayEffect->GetDefaultObject<UGameplayEffect>(),
+				1.0f, TargetAbilitySystem->MakeEffectContext());
+		}
+		else if (bShouldApplyBurningEffect)
+		{
+			TargetAbilitySystem->ApplyGameplayEffectToSelf(ApplyBurningGameplayEffect->GetDefaultObject<UGameplayEffect>(),
+				1.0f, TargetAbilitySystem->MakeEffectContext());
+		}
+		else if (bShouldApplyColdEffect)
+		{
+			TargetAbilitySystem->ApplyGameplayEffectToSelf(ApplyColdGameplayEffect->GetDefaultObject<UGameplayEffect>(),
+				1.0f, TargetAbilitySystem->MakeEffectContext());
+		}
+		else if (bShouldApplyElectrifiedEffect)
+		{
+			TargetAbilitySystem->ApplyGameplayEffectToSelf(ApplyElectrifiedGameplayEffect->GetDefaultObject<UGameplayEffect>(),
+				1.0f, TargetAbilitySystem->MakeEffectContext());
 		}
 
 		//Apply damage multipliers

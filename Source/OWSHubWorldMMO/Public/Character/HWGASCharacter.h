@@ -118,6 +118,19 @@ public:
 	
 	void OnUIRelatedTagsChanged(const FGameplayTag Tag, int32 NewCount);
 
+	//Materials
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Materials")
+		UMaterialInterface* FrozenMaterial;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Materials")
+		TArray<UMaterialInterface*> OriginalMaterials;
+
+	UFUNCTION(BlueprintCallable, Category = "Materials")
+		void ChangeAllMaterials(UMaterialInterface* MaterialToSet);
+
+	UFUNCTION(BlueprintCallable, Category = "Materials")
+		void RevertAllMaterials();
+
 	//UI Combat State
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Combat State")
 		UDataTable* CombatStateIcons;
@@ -160,6 +173,7 @@ public:
 
 	virtual void OnRep_Controller() override;
 
+	virtual void FrozenTagChanged(const FGameplayTag Tag, int32 NewCount);
 	virtual void WetTagChanged(const FGameplayTag Tag, int32 NewCount);
 	virtual void ColdTagChanged(const FGameplayTag Tag, int32 NewCount);
 	virtual void BurningTagChanged(const FGameplayTag Tag, int32 NewCount);

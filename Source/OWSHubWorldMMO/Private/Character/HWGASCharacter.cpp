@@ -6,6 +6,7 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayTagContainer.h"
 #include "GameplayTagsModule.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "./AbilitySystem/HWGameplayAbility.h"
 #include "../OWSHubWorldMMO.h"
 
@@ -46,6 +47,11 @@ void AHWGASCharacter::BeginPlay()
 		//Register Cooldown tag event for the player client-side only.  This is for UI updates.
 		AbilitySystem->RegisterGenericGameplayTagEvent().AddUObject(this, &AHWGASCharacter::OnUIRelatedTagsChanged);
 	}
+
+	//Run on server and clients
+	AbilitySystem->RegisterGameplayTagEvent(FGameplayTag::RequestGameplayTag(FName("Combat.State.Frozen")), 
+		EGameplayTagEventType::NewOrRemoved).AddUObject(this, &AHWGASCharacter::FrozenTagChanged);
+
 }
 
 // Called every frame
@@ -235,6 +241,38 @@ void AHWGASCharacter::ReloadUIForCombatStateDisplayItems()
 
 }
 
+//Materials
+void AHWGASCharacter::ChangeAllMaterials(UMaterialInterface* MaterialToSet)
+{
+	//First time cache the original materials
+	bool bCacheOriginalMaterials = false;
+	if (OriginalMaterials.Num() < 1)
+	{
+		bCacheOriginalMaterials = true;
+	}
+
+	int32 NumberOfMaterialElements = GetMesh()->GetNumMaterials();
+	for (int32 CurrentMaterialElement = 0; CurrentMaterialElement < NumberOfMaterialElements; CurrentMaterialElement++)
+	{
+		if (bCacheOriginalMaterials)
+		{
+			OriginalMaterials.Add(GetMesh()->GetMaterial(CurrentMaterialElement));
+		}
+		GetMesh()->SetMaterial(CurrentMaterialElement, MaterialToSet);
+	}
+}
+
+void AHWGASCharacter::RevertAllMaterials()
+{
+	int32 MaterialIndex = 0;
+	for (auto OriginalMaterial : OriginalMaterials)
+	{
+		GetMesh()->SetMaterial(MaterialIndex, OriginalMaterial);
+		MaterialIndex++;
+	}
+}
+
+
 //Events
 
 //Respond to UI related tag changes
@@ -296,6 +334,37 @@ void AHWGASCharacter::CombatStateTagChanged(const FGameplayTag Tag, int32 NewCou
 		UHWCombatStateDisplayItemObject* CombatStateDisplayItemObject = NewObject<UHWCombatStateDisplayItemObject>();
 		CombatStateDisplayItemObject->Data.CombatStateTag = Tag;
 		AddCombatStateDisplayItem(CombatStateDisplayItemObject);
+	}
+}
+
+//Fires on server and clients when the Frozen tag is added or removed
+void AHWGASCharacter::FrozenTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	//It was removed
+	if (NewCount == 0)
+	{
+		UE_LOG(OWSHubWorldMMO, Error, TEXT("FrozenStateTag - Removed"));
+
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+
+		//Only run on owning and proxy clients
+		if (!HasAuthority())
+		{
+			RevertAllMaterials();
+		}
+	}
+	else //It was added
+	{
+		UE_LOG(OWSHubWorldMMO, Error, TEXT("FrozenStateTag - Added"));
+
+		GetCharacterMovement()->StopMovementImmediately();
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+		//Only run on owning and proxy clients
+		if (!HasAuthority())
+		{
+			ChangeAllMaterials(FrozenMaterial);
+		}
 	}
 }
 

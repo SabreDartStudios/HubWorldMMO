@@ -33,14 +33,19 @@ private:
     FGameplayTag ElectrifiedTag;
 
     FGameplayTag ChargedTag;
+    FGameplayTag FrozenTag;
     FGameplayTag FirestormTag;
     FGameplayTag SuperconductTag;
 
-    FGameplayTag FrozenTag;
-
     FGameplayTag CriticalHitTag;
 
+    TSubclassOf<UGameplayEffect> ApplyColdGameplayEffect;
+    TSubclassOf<UGameplayEffect> ApplyBurningGameplayEffect;
     TSubclassOf<UGameplayEffect> ApplyWetGameplayEffect;
+    TSubclassOf<UGameplayEffect> ApplyElectrifiedGameplayEffect;
+
+    TSubclassOf<UGameplayEffect> ApplyFrozenGameplayEffect;
+    TSubclassOf<UGameplayEffect> ApplyChargedGameplayEffect;
 
     void SetupGameplayEffects();
     void SetupGameplayTags();
