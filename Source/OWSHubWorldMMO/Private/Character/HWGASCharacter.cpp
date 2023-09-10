@@ -8,6 +8,7 @@
 #include "GameplayTagsModule.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "./AbilitySystem/HWGameplayAbility.h"
+#include "Kismet/GameplayStatics.h"
 #include "../OWSHubWorldMMO.h"
 
 
@@ -363,6 +364,11 @@ void AHWGASCharacter::FrozenTagChanged(const FGameplayTag Tag, int32 NewCount)
 		//Only run on owning and proxy clients
 		if (!HasAuthority())
 		{
+			//Start playing Freeze FX
+			UGameplayStatics::SpawnEmitterAttached(StartFreezingFX, GetMesh(), 
+				FName("Root"), FVector(0.f, 0.f, 0.f),
+				FRotator(0.f, 0.f, 0.f), EAttachLocation::KeepRelativeOffset, true);
+
 			ChangeAllMaterials(FrozenMaterial);
 		}
 	}

@@ -10,6 +10,7 @@
 //#include "./Player/HWPlayerController.h"
 #include "./UI/HWHUD.h"
 #include "./AbilitySystem/HWAbilitySystemComponent.h"
+#include "Particles/ParticleSystem.h"
 #include "HWGASCharacter.generated.h"
 
 //Row definition for the Combat State Icons
@@ -117,6 +118,10 @@ public:
 		void OnInflictDamage(AHWGASCharacter* WhoWasDamaged, float DamageAmount, bool IsCritical);
 	
 	void OnUIRelatedTagsChanged(const FGameplayTag Tag, int32 NewCount);
+
+	//Particle FX
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "FX")
+		UParticleSystem* StartFreezingFX;
 
 	//Materials
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Materials")
