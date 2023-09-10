@@ -36,7 +36,7 @@ layout: home
 4. After it downloads all of the files, open Config/DefaultGame.ini and put your API key in the OWSAPICustomerKey and save the file.
 5. Open OWSInstanceLauncher/appsettings.json and put your API key in OWSAPIKey.  You also need to set PathToDedicatedServer to point to your Unreal Engine 5 editor and set PathToUProject to point to the OWSHubWorldMMO.uproject file.
 6. Open SQL Server Management Studio and connect to the OpenWorldServer database using the instructions from the OWS 2 setup.  Open SQL/Initialize.sql.  Add your API key to the top line of the SQL script, then run it.
-7. Download the [Project Content Zip File](https://drive.google.com/file/d/1JRBcobcl__dZK5UCc8IZIg-C3IW3S9a_/view?usp=sharing) (3.5 GB) and copy the files into your Content folder.
+7. Download the [Project Content Zip File - 20230910](https://drive.google.com/file/d/1S4trwDJZvj7efQeeZtknlxzaiorF7Oot/view?usp=sharing) (3.5 GB) and copy the files into your Content folder.
 8. Right click on the OWSHubWorldMMO.uproject file and click on "Generate project files..."
 9. Open the OWS 2 project in Visual Studio 2022 and press docker-compose.  Give it a minute or two to fully start up.  You must repeat this step whenever you want to develop with the Hub World MMO project.  "docker-compose" MUST stay running in Visual Studio 2022 the entire time.
 10. Open OWSHubWorldMMO.sln in a second copy of Visual Studio 2022 and press the green play button.
@@ -47,6 +47,6 @@ layout: home
 
 ## _HWAssets Update
 
-If you don't need the Megascans and MSPresets folders which don't change often, you can use the following link to get the latest _HWAssets folder changes (updated 7/18/2023).
+If you don't need the Megascans and MSPresets folders which don't change often, you can use the following link to get the latest _HWAssets folder changes (updated 9/10/2023).
 
-[_HWAssets Folder](https://drive.google.com/file/d/1pkF4Tq7crxR5ficSVk_uAvaDG9hdp80u/view?usp=sharing) 509 MB
+[_HWAssets Folder](https://drive.google.com/file/d/1JN1sOEcwcMs7EDCl0bAFUWVo9YgWum79/view?usp=sharing) 562 MB
