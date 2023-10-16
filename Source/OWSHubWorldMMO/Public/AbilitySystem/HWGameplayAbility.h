@@ -49,6 +49,9 @@ public:
 
 	AHWGASCharacter* GetHWAvatarActor();
 
+	UFUNCTION(BlueprintCallable, Category = "Combat Data")
+		float GetFloatValueFromCombatData(FString FloatCombatValueName);
+
 	bool GetEndAbilityThisFrame() const { return bEndAbilityThisFrame; };
 	EHWAbilityActivationPolicy GetActivationPolicy() const { return ActivationPolicy; };
 	EHWAbilityActivationGroup GetActivationGroup() const { return ActivationGroup; };
@@ -60,6 +63,10 @@ public:
 protected:
 
 	virtual bool DoesAbilitySatisfyTagRequirements(const UAbilitySystemComponent& AbilitySystemComponent, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, OUT FGameplayTagContainer* OptionalRelevantTags) const override;
+
+	//Set the name of the ability for use with Combat Data
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HW|Ability")
+		FString AbilityName;
 
 	//Set this to true to use end the ability in the same frame.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HW|Ability Activation")

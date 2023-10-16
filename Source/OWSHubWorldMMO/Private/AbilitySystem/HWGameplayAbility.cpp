@@ -2,6 +2,7 @@
 
 
 #include "./AbilitySystem/HWGameplayAbility.h"
+#include "./AbilitySystem/HWCombatDataSubsystem.h"
 
 UHWGameplayAbility::UHWGameplayAbility()
 {
@@ -129,4 +130,24 @@ bool UHWGameplayAbility::DoesAbilitySatisfyTagRequirements(const UAbilitySystemC
 	}
 
 	return true;
+}
+
+/***** COMBAT DATA *****/
+
+float UHWGameplayAbility::GetFloatValueFromCombatData(FString FloatCombatValueName)
+{
+	UGameInstance* GameInstance = Cast<UGameInstance>(GetWorld()->GetGameInstance());
+
+	if (!GameInstance)
+	{
+		return -999996.f; //Game Instance IS NULL Error Value!
+	}
+	
+	UHWCombatDataSubsystem* CombatDataSubsystem = GameInstance->GetSubsystem<UHWCombatDataSubsystem>();
+	if (CombatDataSubsystem)
+	{
+		return CombatDataSubsystem->GetFloatValue(AbilityName, FloatCombatValueName);
+	}
+
+	return -999997.f; //Combat Data Subsystem IS NULL Error Value!
 }
