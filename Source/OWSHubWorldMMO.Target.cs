@@ -14,7 +14,6 @@ public class OWSHubWorldMMOTarget : TargetRules
         ExtraModuleNames.AddRange( new string[] { "OWSHubWorldMMO" } );
 
         /*
-        //Only works with a source build engine
         if (!bUseIris)
         {
             BuildEnvironment = TargetBuildEnvironment.Unique;

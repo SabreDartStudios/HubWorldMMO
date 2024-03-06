@@ -38,6 +38,10 @@
 		{
 			"Name": "TargetingSystem",
 			"Enabled": true
+		},
+		{
+			"Name": "Iris",
+			"Enabled": true
 		}
 	]
 }
