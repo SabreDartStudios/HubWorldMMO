@@ -35,7 +35,7 @@ layout: home
 3. Once you have your own fork of the Hub World MMO project on your GitHub, then you can open Visual Studio 2022 and Clone it.
 4. After it downloads all of the files, open Config/DefaultGame.ini and put your API key in the OWSAPICustomerKey and save the file.
 5. Open OWSInstanceLauncher/appsettings.json and put your API key in OWSAPIKey.  You also need to set PathToDedicatedServer to point to your Unreal Engine 5 editor and set PathToUProject to point to the OWSHubWorldMMO.uproject file.
-6. Open SQL Server Management Studio and connect to the OpenWorldServer database using the instructions from the OWS 2 setup.  Open SQL/Initialize.sql.  Add your API key to the top line of the SQL script, then run it.
+6. Open SQL Server Management Studio and connect to the OpenWorldServer database using the instructions from the OWS 2 setup.  Open the Initialize.sql script in the SQL folder based on the DB technology and client type you are using.  Add your API key to the top line of the SQL script, then run it.
 7. Download the [Project Content Zip File - 20230910](https://drive.google.com/file/d/1S4trwDJZvj7efQeeZtknlxzaiorF7Oot/view?usp=sharing) (3.5 GB) and copy the files into your Content folder.
 8. Right click on the OWSHubWorldMMO.uproject file and click on "Generate project files..."
 9. Open the OWS 2 project in Visual Studio 2022 and press docker-compose.  Give it a minute or two to fully start up.  You must repeat this step whenever you want to develop with the Hub World MMO project.  "docker-compose" MUST stay running in Visual Studio 2022 the entire time.
