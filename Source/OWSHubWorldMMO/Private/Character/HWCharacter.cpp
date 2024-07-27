@@ -31,12 +31,18 @@ void AHWCharacter::Tick(float DeltaTime)
 
 void AHWCharacter::SetupURO()
 {
-	GetMesh()->AnimUpdateRateParams->bShouldUseLodMap = true;
+	GetMesh()->AnimUpdateRateParams->bShouldUseLodMap = false;
 	GetMesh()->AnimUpdateRateParams->BaseNonRenderedUpdateRate = 4;
+	GetMesh()->AnimUpdateRateParams->BaseVisibleDistanceFactorThesholds.Add(0.4f); //Skip 0 frames
+	GetMesh()->AnimUpdateRateParams->BaseVisibleDistanceFactorThesholds.Add(0.2f); //Skip 1 frame
+	GetMesh()->AnimUpdateRateParams->BaseVisibleDistanceFactorThesholds.Add(0.1f);	//Skip 2 frames
+	GetMesh()->AnimUpdateRateParams->BaseVisibleDistanceFactorThesholds.Add(0.0f); //Skip 3 frames
+	/*
 	GetMesh()->AnimUpdateRateParams->LODToFrameSkipMap.Add(0, 0);
 	GetMesh()->AnimUpdateRateParams->LODToFrameSkipMap.Add(1, 1);
 	GetMesh()->AnimUpdateRateParams->LODToFrameSkipMap.Add(2, 2);
 	GetMesh()->AnimUpdateRateParams->LODToFrameSkipMap.Add(3, 3);
+	*/
 	GetMesh()->AnimUpdateRateParams->MaxEvalRateForInterpolation = 10;
 }
 

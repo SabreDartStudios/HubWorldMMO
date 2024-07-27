@@ -14,6 +14,7 @@
 #include "./Interactables/Interactable.h"
 #include "./Interactables/SupplyPod.h"
 #include "Kismet/GameplayStatics.h"
+#include "Runtime/Engine/Classes/Engine/OverlapResult.h"
 #include "../OWSHubWorldMMO.h"
 
 typedef TJsonWriterFactory< TCHAR, TCondensedJsonPrintPolicy<TCHAR> > FCondensedJsonStringWriterFactory;
@@ -482,15 +483,15 @@ void AHWPlayerController::NotifyGetCustomCharacterData(TSharedPtr<FJsonObject> J
 {
 	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - NotifyGetCustomCharacterData Started"));
 	
-	if (JsonObject->HasField("rows"))
+	if (JsonObject->HasField(TEXT("rows")))
 	{
-		TArray<TSharedPtr<FJsonValue>> Rows = JsonObject->GetArrayField("rows");
+		TArray<TSharedPtr<FJsonValue>> Rows = JsonObject->GetArrayField(TEXT("rows"));
 
 		//Loop through the Custom Field rows
 		for (int RowNum = 0; RowNum != Rows.Num(); RowNum++) {
 			TSharedPtr<FJsonObject> tempRow = Rows[RowNum]->AsObject();
-			FString CustomFieldName = tempRow->GetStringField("CustomFieldName");
-			FString CustomFieldValue = tempRow->GetStringField("FieldValue");
+			FString CustomFieldName = tempRow->GetStringField(TEXT("CustomFieldName"));
+			FString CustomFieldValue = tempRow->GetStringField(TEXT("FieldValue"));
 
 			if (CustomFieldName == "BaseCharacterStats")
 			{

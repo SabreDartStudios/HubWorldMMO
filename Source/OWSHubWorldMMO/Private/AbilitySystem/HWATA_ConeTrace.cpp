@@ -2,6 +2,7 @@
 
 
 #include "./AbilitySystem/HWATA_ConeTrace.h"
+#include "Runtime/Engine/Classes/Engine/OverlapResult.h"
 #include "DrawDebugHelpers.h"
 
 void AHWATA_ConeTrace::ConfirmTargetingAndContinue()

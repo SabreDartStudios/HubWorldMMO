@@ -19,10 +19,13 @@ struct FTraceStep
 		StartTimeInSeconds = 0.f;
 		CollisionShape = 0;
 		Radius = 100.f;
-		bActivated = false;
+		OffsetFromOrigin = FVector();
+		bCanHitSelf = false;
+		MaxNumberOfTargetsToHit = 1;
 		bDisabled = false;
 		bDebug = false;
-		MaxNumberOfTargetsToHit = 1;
+		StepNumber = 0;
+		bActivated = false;
 	}
 
 	/** How many seconds to wait to activate this instant one-frame trace.*/
