@@ -23,22 +23,22 @@ void UHWCombatDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 	if (FJsonSerializer::Deserialize(Reader, JsonObject))
 	{
-		TArray<TSharedPtr<FJsonValue>> Abilities = JsonObject->GetArrayField("Abilities");
+		TArray<TSharedPtr<FJsonValue>> Abilities = JsonObject->GetArrayField(TEXT("Abilities"));
 		for (auto Ability : Abilities)
 		{
 			const TSharedPtr<FJsonObject>* CurrentCombatAbility;
 			if (Ability->TryGetObject(CurrentCombatAbility))
 			{
 				FCombatAbility AbilityToAdd;
-				AbilityToAdd.AbilityName = CurrentCombatAbility->Get()->GetStringField("AbilityName");
-				TArray<TSharedPtr<FJsonValue>> FloatCombatValues = CurrentCombatAbility->Get()->GetArrayField("FloatCombatValues");
+				AbilityToAdd.AbilityName = CurrentCombatAbility->Get()->GetStringField(TEXT("AbilityName"));
+				TArray<TSharedPtr<FJsonValue>> FloatCombatValues = CurrentCombatAbility->Get()->GetArrayField(TEXT("FloatCombatValues"));
 				for (auto FloatCombatValue : FloatCombatValues)
 				{
 					const TSharedPtr<FJsonObject>* CurrentCombatAbilityFloatCombatValues;
 					if (FloatCombatValue->TryGetObject(CurrentCombatAbilityFloatCombatValues))
 					{
-						FString FloatCombatValueName = CurrentCombatAbilityFloatCombatValues->Get()->GetStringField("FloatCombatValueName");
-						float FloatCombatValueFloat = CurrentCombatAbilityFloatCombatValues->Get()->GetNumberField("FloatCombatValue");
+						FString FloatCombatValueName = CurrentCombatAbilityFloatCombatValues->Get()->GetStringField(TEXT("FloatCombatValueName"));
+						float FloatCombatValueFloat = CurrentCombatAbilityFloatCombatValues->Get()->GetNumberField(TEXT("FloatCombatValue"));
 						AbilityToAdd.FloatCombatValues.Add(FloatCombatValueName, FloatCombatValueFloat);
 					}
 				}

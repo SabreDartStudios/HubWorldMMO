@@ -16,7 +16,6 @@ public class OWSHubWorldMMO : ModuleRules
             "GameplayAbilities",
             "GameplayTags",
             "GameplayTasks",
-            "ReplicationGraph",
 			"AIModule"
 		});
 

@@ -2,6 +2,7 @@
 
 
 #include "./AbilitySystem/HWAT_WaitMultiTraceForTargets.h"
+#include "Runtime/Engine/Classes/Engine/OverlapResult.h"
 #include "Kismet/KismetMathLibrary.h"
 
 UHWAT_WaitMultiTraceForTargets::UHWAT_WaitMultiTraceForTargets(const FObjectInitializer& ObjectInitializer)
