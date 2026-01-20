@@ -11,6 +11,23 @@
 #include "./Input/HWMappableConfigPair.h"
 #include "HWGASPlayerCharacter.generated.h"
 
+USTRUCT()
+struct FInputMappingContextAndPriority
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = "Input", meta = (AssetBundles = "Client,Server"))
+	TSoftObjectPtr<UInputMappingContext> InputMapping;
+
+	// Higher priority input mappings will be prioritized over mappings with a lower priority.
+	UPROPERTY(EditAnywhere, Category = "Input")
+	int32 Priority = 0;
+
+	/** If true, then this mapping context will be registered with the settings when this game feature action is registered. */
+	UPROPERTY(EditAnywhere, Category = "Input")
+	bool bRegisterWithSettings = true;
+};
+
 /**
  * 
  */
@@ -35,6 +52,9 @@ public:
 		TArray<FMappableConfigPair> DefaultInputConfigs;
 
 	UPROPERTY(EditAnywhere, Category = "HW|Input")
+		TArray<FInputMappingContextAndPriority> DefaultInputMappings;
+
+	UPROPERTY(EditAnywhere, Category = "HW|Input")
 		float LookGamepadStickYawRate = 300.0f;
 	UPROPERTY(EditAnywhere, Category = "HW|Input")
 		float LookGamepadStickPitchRate = 165.0f;
@@ -49,6 +69,10 @@ public:
 	// Input configuration used by player controlled pawns to create input mappings and bind input actions.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HW|Input")
 		TObjectPtr<UHWInputConfig> InputConfig;
+
+	// Input mapping context used by player controlled pawns to create input mappings
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HW|Input")
+		UInputMappingContext* InputMapping;
 
 	void AbilityInputTagPressed(FGameplayTag InputTag);
 	void AbilityInputTagReleased(FGameplayTag InputTag);

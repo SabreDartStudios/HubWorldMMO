@@ -194,6 +194,7 @@ void AHWPlayerController::PartialInitializationComplete(FString InitializationPa
 	}
 
 	//Cascading Events
+	//There is where we can kick of other initialization steps that require a previous setup as a dependency
 
 	//Are all the parts complete?
 	for (auto& InitializationPart : InitializationParts)

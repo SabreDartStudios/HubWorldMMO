@@ -76,7 +76,7 @@ FString AHWCharacter::SerializeBaseCharacterSkills()
 {
 	FString SerializedBaseCharacterSkills = "";
 	if (FJsonObjectConverter::UStructToJsonObjectString(BaseCharacterSkills, SerializedBaseCharacterSkills, 
-		0i64, 0i64, 0, 	nullptr, false))
+		0LL, 0LL, 0, 	nullptr, false))
 	{
 		return SerializedBaseCharacterSkills;
 	}
@@ -94,7 +94,7 @@ FString AHWCharacter::SerializeCharacterExperience()
 {
 	FString SerializedCharacterExperience = "";
 	if (FJsonObjectConverter::UStructToJsonObjectString(CharacterExperience, SerializedCharacterExperience, 
-		0i64, 0i64, 0, 	nullptr, false))
+		0LL, 0LL, 0, 	nullptr, false))
 	{
 		return SerializedCharacterExperience;
 	}

@@ -194,25 +194,6 @@ struct TStructOpsTypeTraits<FHWInventoryMaster> : public TStructOpsTypeTraitsBas
 	};
 };
 
-USTRUCT(BlueprintType, Blueprintable)
-struct FHWInventoryItemDropPoint
-{
-	GENERATED_USTRUCT_BODY()
-
-	FHWInventoryItemDropPoint()
-	{
-
-	}
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory")
-		FString ZoneName;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory")
-		FVector DropLocation;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory")
-		FRotator DropRotation;
-
-};
-
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class OWSHUBWORLDMMO_API UHWInventoryComponent : public UActorComponent
 {

@@ -6,6 +6,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "./Input/HWMappableConfigPair.h"
 #include "./Settings/HWSettingsLocal.h"
+#include "UserSettings/EnhancedInputUserSettings.h"
 #include "InputCoreTypes.h"
 #include "UObject/NameTypes.h"
 #include "UObject/UnrealNames.h"
@@ -23,21 +24,7 @@ void UHWInputComponent::AddInputMappings(const UHWInputConfig* InputConfig, UEnh
 	check(InputConfig);
 	check(InputSubsystem);
 
-	ULocalPlayer* LocalPlayer = InputSubsystem->GetLocalPlayer<ULocalPlayer>();
-	check(LocalPlayer);
-
-	// Add any registered input mappings from the settings!
-	if (UHWSettingsLocal* LocalSettings = UHWSettingsLocal::Get())
-	{
-		// Tell enhanced input about any custom keymappings that the player may have customized
-		for (const TPair<FName, FKey>& Pair : LocalSettings->GetCustomPlayerInputConfig())
-		{
-			if (Pair.Key != NAME_None && Pair.Value.IsValid())
-			{
-				InputSubsystem->AddPlayerMappedKeyInSlot(Pair.Key, Pair.Value);
-			}
-		}
-	}
+	// Here you can handle any custom logic to add something from your input config if required
 }
 
 void UHWInputComponent::RemoveInputMappings(const UHWInputConfig* InputConfig, UEnhancedInputLocalPlayerSubsystem* InputSubsystem) const
@@ -45,24 +32,7 @@ void UHWInputComponent::RemoveInputMappings(const UHWInputConfig* InputConfig, U
 	check(InputConfig);
 	check(InputSubsystem);
 
-	ULocalPlayer* LocalPlayer = InputSubsystem->GetLocalPlayer<ULocalPlayer>();
-	check(LocalPlayer);
-
-	if (UHWSettingsLocal* LocalSettings = UHWSettingsLocal::Get())
-	{
-		// Remove any registered input contexts
-		const TArray<FLoadedMappableConfigPair>& Configs = LocalSettings->GetAllRegisteredInputConfigs();
-		for (const FLoadedMappableConfigPair& Pair : Configs)
-		{
-			InputSubsystem->RemovePlayerMappableConfig(Pair.Config);
-		}
-
-		// Clear any player mapped keys from enhanced input
-		for (const TPair<FName, FKey>& Pair : LocalSettings->GetCustomPlayerInputConfig())
-		{
-			InputSubsystem->RemovePlayerMappedKeyInSlot(Pair.Key);
-		}
-	}
+	// Here you can handle any custom logic to remove input mappings that you may have added above
 }
 
 void UHWInputComponent::RemoveBinds(TArray<uint32>& BindHandles)

@@ -20,7 +20,7 @@ void UHWGameplayAbility_Dodge::ActivateAbility(const FGameplayAbilitySpecHandle 
 
 		//Root Motion Contstant Force
 		FVector WorldDirection;
-		FVector SetVelocityOnFinish;
+		FVector SetVelocityOnFinish = FVector(0.f, 0.f, 0.f );
 
 		//0 = Forwards, 1 = Right, 2 = Backwards, 3 = Left
 		if (Direction == 0)

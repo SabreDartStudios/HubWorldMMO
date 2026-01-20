@@ -11,9 +11,11 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(HWMappableConfigPair)
 
+PRAGMA_DISABLE_DEPRECATION_WARNINGS
 bool FMappableConfigPair::CanBeActivated() const
 {
-	/*const FGameplayTagContainer& PlatformTraits = ICommonUIModule::GetSettings().GetPlatformTraits();
+	/*
+	const FGameplayTagContainer& PlatformTraits = ICommonUIModule::GetSettings().GetPlatformTraits();
 
 	// If the current platform does NOT have all the dependent traits, then don't activate it
 	if (!DependentPlatformTraits.IsEmpty() && !PlatformTraits.HasAll(DependentPlatformTraits))
@@ -25,7 +27,8 @@ bool FMappableConfigPair::CanBeActivated() const
 	if (!ExcludedPlatformTraits.IsEmpty() && PlatformTraits.HasAny(ExcludedPlatformTraits))
 	{
 		return false;
-	}*/
+	}
+	*/
 
 	return true;
 }
@@ -59,3 +62,4 @@ void FMappableConfigPair::UnregisterPair(const FMappableConfigPair& Pair)
 		}
 	}
 }
+PRAGMA_ENABLE_DEPRECATION_WARNINGS

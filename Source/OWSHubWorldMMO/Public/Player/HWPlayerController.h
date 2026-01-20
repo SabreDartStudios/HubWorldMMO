@@ -182,7 +182,7 @@ public:
 	void PawnLeavingGame();
 
 
-	//Initiailization
+	//Initialization
 	UPROPERTY(EditAnywhere, Category = "HW|Initialization")
 		TArray<FHWInitializationPart> InitializationParts;
 
