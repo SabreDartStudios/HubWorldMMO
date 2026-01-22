@@ -75,7 +75,7 @@ AOWSAdvancedProjectile::AOWSAdvancedProjectile(const class FObjectInitializer& O
 	bHasSpawnedFully = false;
 
 	NetPriority = 2.f;
-	MinNetUpdateFrequency = 100.0f;
+	SetMinNetUpdateFrequency(100.0f);
 }
 
 void AOWSAdvancedProjectile::PreInitializeComponents()
