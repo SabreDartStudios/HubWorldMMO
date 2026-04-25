@@ -1,11 +1,14 @@
 // Copyright 2023 Sabre Dart Studios
 
 #include "Game/HWGameMode.h"
+#include "Game/HWPlayerState.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonSerializer.h"
 
 AHWGameMode::AHWGameMode()
 {
+	PlayerStateClass = AHWPlayerState::StaticClass();
+
 	bEnableContentPullOnServerSpinUp = false;
 	OnZoneContentLoaded.AddDynamic(this, &AHWGameMode::OnZoneContentLoadedHandler);
 }

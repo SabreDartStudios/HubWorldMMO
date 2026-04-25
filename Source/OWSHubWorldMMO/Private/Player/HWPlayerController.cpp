@@ -16,6 +16,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Runtime/Engine/Classes/Engine/OverlapResult.h"
 #include "../OWSHubWorldMMO.h"
+#include "Game/HWPlayerState.h"
 
 typedef TJsonWriterFactory< TCHAR, TCondensedJsonPrintPolicy<TCHAR> > FCondensedJsonStringWriterFactory;
 typedef TJsonWriter< TCHAR, TCondensedJsonPrintPolicy<TCHAR> > FCondensedJsonStringWriter;
@@ -489,6 +490,8 @@ void AHWPlayerController::NotifyGetCustomCharacterData(TSharedPtr<FJsonObject> J
 	{
 		TArray<TSharedPtr<FJsonValue>> Rows = JsonObject->GetArrayField(TEXT("rows"));
 
+		bool bRiftInventoryRowFound = false;
+
 		//Loop through the Custom Field rows
 		for (int RowNum = 0; RowNum != Rows.Num(); RowNum++) {
 			TSharedPtr<FJsonObject> tempRow = Rows[RowNum]->AsObject();
@@ -507,6 +510,14 @@ void AHWPlayerController::NotifyGetCustomCharacterData(TSharedPtr<FJsonObject> J
 			{
 				LoadSupplyPodsOpenedFromJSON(CustomFieldValue);
 			}
+			else if (CustomFieldName == "RiftInventory")
+			{
+				bRiftInventoryRowFound = true;
+				if (AHWPlayerState* HWPS = GetPlayerState<AHWPlayerState>())
+				{
+					HWPS->DeliverInventoryLoadResult(true, CustomFieldValue);
+				}
+			}
 			/*
 			else if (CustomFieldName.Contains("Inventory"))
 			{
@@ -523,6 +534,16 @@ void AHWPlayerController::NotifyGetCustomCharacterData(TSharedPtr<FJsonObject> J
 			*/
 		}
 
+		// New player: no "RiftInventory" row exists yet — signal the inventory component
+		// to finish initialization with defaults (AddDefaultItems will be called).
+		if (!bRiftInventoryRowFound)
+		{
+			if (AHWPlayerState* HWPS = GetPlayerState<AHWPlayerState>())
+			{
+				HWPS->DeliverInventoryLoadResult(false, FString());
+			}
+		}
+
 		//Custom Character Data has been loaded.  Continue with additional Character initialization.
 		PartialInitializationComplete("CUSTOMCHARACTERDATA");
 
@@ -532,6 +553,12 @@ void AHWPlayerController::NotifyGetCustomCharacterData(TSharedPtr<FJsonObject> J
 	else
 	{
 		UE_LOG(OWSHubWorldMMO, Warning, TEXT("NotifyGetCustomCharacterData Server returned no data!  This can happen when the Character has no Custom Data and might not be an error."));
+
+		// No rows at all (brand new character) — still need to unblock inventory initialization.
+		if (AHWPlayerState* HWPS = GetPlayerState<AHWPlayerState>())
+		{
+			HWPS->DeliverInventoryLoadResult(false, FString());
+		}
 	}
 }
 
@@ -539,7 +566,12 @@ void AHWPlayerController::NotifyGetCustomCharacterData(TSharedPtr<FJsonObject> J
 void AHWPlayerController::ErrorCustomCharacterData(const FString& ErrorMsg)
 {
 	UE_LOG(OWSHubWorldMMO, Verbose, TEXT("AHWPlayerController - ErrorCustomCharacterData: %s"), *ErrorMsg);
-	
+
+	// Unblock inventory initialization so the player gets default items even when OWS is unreachable.
+	if (AHWPlayerState* HWPS = GetPlayerState<AHWPlayerState>())
+	{
+		HWPS->DeliverInventoryLoadResult(false, FString());
+	}
 }
 
 void AHWPlayerController::NotifyZoneServerToTravelTo(const FString& ServerAndPort)

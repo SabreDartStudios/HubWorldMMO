@@ -9,6 +9,8 @@
 #include "./Character/HWGASPlayerCharacter.h"
 #include "./Inventory/HWInventoryComponent.h"
 #include "./AbilitySystem/HWAbilitySystemComponent.h"
+class AHWPlayerState;
+
 #include "HWPlayerController.generated.h"
 
 USTRUCT(BlueprintType, Blueprintable)

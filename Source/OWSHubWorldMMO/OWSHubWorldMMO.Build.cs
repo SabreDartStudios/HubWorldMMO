@@ -26,7 +26,9 @@ public class OWSHubWorldMMO : ModuleRules
             "Json",
 			"JsonUtilities",
 			"HTTP",
-            "OWSPlugin"
+            "OWSPlugin",
+            "RiftVaultSave",
+            "RiftVaultInventory"
         });
 
         PublicIncludePathModuleNames.AddRange(new string[] { 

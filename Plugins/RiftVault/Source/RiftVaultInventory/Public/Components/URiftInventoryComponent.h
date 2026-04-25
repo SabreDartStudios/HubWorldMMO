@@ -626,6 +626,7 @@ protected:
      * @param bSuccess   True if the save data was loaded without errors.
      * @param SaveData   The deserialized save data. Only meaningful when bSuccess is true.
      */
+    UFUNCTION()
     virtual void OnInventoryLoaded(bool bSuccess, const FRiftInventorySaveData& SaveData);
 
     /**
