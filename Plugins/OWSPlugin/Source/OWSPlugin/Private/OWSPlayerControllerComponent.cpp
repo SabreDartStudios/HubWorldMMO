@@ -51,6 +51,20 @@ UOWSPlayerControllerComponent::UOWSPlayerControllerComponent()
 		GGameIni
 	);
 
+	GConfig->GetFloat(
+		TEXT("/Script/EngineSettings.GeneralProjectSettings"),
+		TEXT("ZoneStatusPollIntervalSeconds"),
+		ZoneStatusPollIntervalSeconds,
+		GGameIni
+	);
+
+	GConfig->GetInt(
+		TEXT("/Script/EngineSettings.GeneralProjectSettings"),
+		TEXT("ZoneStatusMaxPolls"),
+		ZoneStatusMaxPolls,
+		GGameIni
+	);
+
 	UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(this);
 	//GameInstance will be null on Editor startup, but will have a valid refernce when playing the game
 	if (GameInstance)
@@ -380,6 +394,10 @@ void UOWSPlayerControllerComponent::OnTravelToLastZoneServerResponseReceived(FHt
 //GetZoneServerToTravelTo
 void UOWSPlayerControllerComponent::GetZoneServerToTravelTo(FString CharacterName, TEnumAsByte<ERPGSchemeToChooseMap::SchemeToChooseMap> SelectedSchemeToChooseMap, int32 WorldServerID, FString ZoneName)
 {
+	// Cache for use by the status-polling path.
+	ZoneStatusCharacterName = CharacterName;
+	ZoneStatusZoneName = ZoneName;
+
 	FTravelToLastZoneServerJSONPost TravelToLastZoneServerJSONPost;
 	TravelToLastZoneServerJSONPost.CharacterName = CharacterName;
 	TravelToLastZoneServerJSONPost.ZoneName = ZoneName;
@@ -397,41 +415,138 @@ void UOWSPlayerControllerComponent::GetZoneServerToTravelTo(FString CharacterNam
 
 void UOWSPlayerControllerComponent::OnGetZoneServerToTravelToResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 {
-	FString ServerAndPort;
-
-	if (bWasSuccessful)
-	{
-		TSharedPtr<FJsonObject> JsonObject;
-		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
-
-		if (FJsonSerializer::Deserialize(Reader, JsonObject))
-		{
-			FString ServerIP = JsonObject->GetStringField(TEXT("serverip"));
-			FString Port = JsonObject->GetStringField(TEXT("port"));
-
-			if (ServerIP.IsEmpty() || Port.IsEmpty())
-			{
-				OnErrorGetZoneServerToTravelToDelegate.ExecuteIfBound(TEXT("Cannot connect to server!"));
-				return;
-			}
-
-			ServerAndPort = ServerIP + FString(TEXT(":")) + Port.Left(4);
-
-			UE_LOG(LogTemp, Warning, TEXT("ServerAndPort: %s"), *ServerAndPort);
-
-			OnNotifyGetZoneServerToTravelToDelegate.ExecuteIfBound(ServerAndPort);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("OnGetZoneServerToTravelToResponseReceived Server returned no data!"));
-			OnErrorGetZoneServerToTravelToDelegate.ExecuteIfBound(TEXT("There was a problem connecting to the server.  Please try again."));
-		}
-	}
-	else
+	if (!bWasSuccessful)
 	{
 		UE_LOG(LogTemp, Error, TEXT("OnGetZoneServerToTravelToResponseReceived Error accessing server!"));
 		OnErrorGetZoneServerToTravelToDelegate.ExecuteIfBound(TEXT("Unknown error connecting to server!"));
+		return;
 	}
+
+	TSharedPtr<FJsonObject> JsonObject;
+	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
+
+	if (!FJsonSerializer::Deserialize(Reader, JsonObject))
+	{
+		UE_LOG(LogTemp, Error, TEXT("OnGetZoneServerToTravelToResponseReceived Server returned no data!"));
+		OnErrorGetZoneServerToTravelToDelegate.ExecuteIfBound(TEXT("There was a problem connecting to the server.  Please try again."));
+		return;
+	}
+
+	FString ServerIP = JsonObject->GetStringField(TEXT("serverip"));
+	FString Port = JsonObject->GetStringField(TEXT("port"));
+
+	if (ServerIP.IsEmpty() || Port.IsEmpty())
+	{
+		OnErrorGetZoneServerToTravelToDelegate.ExecuteIfBound(TEXT("Cannot connect to server!"));
+		return;
+	}
+
+	FString ServerAndPort = ServerIP + FString(TEXT(":")) + Port.Left(4);
+	UE_LOG(LogTemp, Warning, TEXT("ServerAndPort: %s"), *ServerAndPort);
+
+	int32 MapInstanceStatus = 0;
+	JsonObject->TryGetNumberField(TEXT("mapInstanceStatus"), MapInstanceStatus);
+
+	// Status 2 = server is ready and AddCharacterToMapInstanceByCharName has already been called.
+	if (MapInstanceStatus == 2)
+	{
+		OnNotifyGetZoneServerToTravelToDelegate.ExecuteIfBound(ServerAndPort);
+		return;
+	}
+
+	// Status 1 = server is still starting. Cache the address and poll the status endpoint.
+	ZoneStatusCachedServerAndPort = ServerAndPort;
+	ZoneStatusPollCount = 0;
+
+	UE_LOG(LogTemp, Warning, TEXT("Zone server starting up (status %d), begin polling status for %s"), MapInstanceStatus, *ServerAndPort);
+
+	GetWorld()->GetTimerManager().SetTimer(
+		ZoneStatusPollTimerHandle,
+		this,
+		&UOWSPlayerControllerComponent::PollGetZoneServerToTravelToStatus,
+		ZoneStatusPollIntervalSeconds,
+		false
+	);
+}
+
+void UOWSPlayerControllerComponent::PollGetZoneServerToTravelToStatus()
+{
+	if (ZoneStatusPollCount >= ZoneStatusMaxPolls)
+	{
+		UE_LOG(LogTemp, Error, TEXT("PollGetZoneServerToTravelToStatus timed out after %d polls"), ZoneStatusPollCount);
+		OnErrorGetZoneServerToTravelToDelegate.ExecuteIfBound(TEXT("Server took too long to become ready."));
+		return;
+	}
+
+	++ZoneStatusPollCount;
+
+	FGetServerToConnectToStatusJSONPost StatusPost;
+	StatusPost.CharacterName = ZoneStatusCharacterName;
+	StatusPost.ZoneName = ZoneStatusZoneName;
+
+	FString PostParameters;
+	if (FJsonObjectConverter::UStructToJsonObjectString(StatusPost, PostParameters))
+	{
+		ProcessOWS2POSTRequest("PublicAPI", "api/Users/GetServerToConnectToStatus", PostParameters, &UOWSPlayerControllerComponent::OnGetZoneServerToTravelToStatusResponseReceived);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("PollGetZoneServerToTravelToStatus Error serializing status request!"));
+		OnErrorGetZoneServerToTravelToDelegate.ExecuteIfBound(TEXT("Internal error polling server status."));
+	}
+}
+
+void UOWSPlayerControllerComponent::OnGetZoneServerToTravelToStatusResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+{
+	if (!bWasSuccessful)
+	{
+		UE_LOG(LogTemp, Error, TEXT("OnGetZoneServerToTravelToStatusResponseReceived Error accessing server!"));
+		OnErrorGetZoneServerToTravelToDelegate.ExecuteIfBound(TEXT("Unknown error polling server status!"));
+		return;
+	}
+
+	TSharedPtr<FJsonObject> JsonObject;
+	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
+
+	if (!FJsonSerializer::Deserialize(Reader, JsonObject))
+	{
+		UE_LOG(LogTemp, Error, TEXT("OnGetZoneServerToTravelToStatusResponseReceived Server returned no data!"));
+		OnErrorGetZoneServerToTravelToDelegate.ExecuteIfBound(TEXT("There was a problem polling server status.  Please try again."));
+		return;
+	}
+
+	bool bSuccess = false;
+	JsonObject->TryGetBoolField(TEXT("success"), bSuccess);
+
+	if (!bSuccess)
+	{
+		FString ErrorMessage;
+		JsonObject->TryGetStringField(TEXT("errorMessage"), ErrorMessage);
+		UE_LOG(LogTemp, Error, TEXT("OnGetZoneServerToTravelToStatusResponseReceived: %s"), *ErrorMessage);
+		OnErrorGetZoneServerToTravelToDelegate.ExecuteIfBound(ErrorMessage.IsEmpty() ? TEXT("Server status check failed.") : ErrorMessage);
+		return;
+	}
+
+	int32 MapInstanceStatus = 0;
+	JsonObject->TryGetNumberField(TEXT("mapInstanceStatus"), MapInstanceStatus);
+
+	if (MapInstanceStatus == 2)
+	{
+		// Server is ready — AddCharacterToMapInstanceByCharName was already called server-side.
+		UE_LOG(LogTemp, Warning, TEXT("Zone server ready after %d poll(s), travelling to %s"), ZoneStatusPollCount, *ZoneStatusCachedServerAndPort);
+		OnNotifyGetZoneServerToTravelToDelegate.ExecuteIfBound(ZoneStatusCachedServerAndPort);
+		return;
+	}
+
+	// Still not ready — schedule the next poll.
+	UE_LOG(LogTemp, Verbose, TEXT("Zone server status %d (poll %d), retrying in 2s"), MapInstanceStatus, ZoneStatusPollCount);
+	GetWorld()->GetTimerManager().SetTimer(
+		ZoneStatusPollTimerHandle,
+		this,
+		&UOWSPlayerControllerComponent::PollGetZoneServerToTravelToStatus,
+		ZoneStatusPollIntervalSeconds,
+		false
+	);
 }
 
 void UOWSPlayerControllerComponent::SavePlayerLocation()

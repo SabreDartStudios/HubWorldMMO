@@ -132,6 +132,8 @@ public:
 		void GetZoneServerToTravelTo(FString CharacterName, TEnumAsByte<ERPGSchemeToChooseMap::SchemeToChooseMap> SelectedSchemeToChooseMap, int32 WorldServerID, FString ZoneName);
 
 	void OnGetZoneServerToTravelToResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
+	void PollGetZoneServerToTravelToStatus();
+	void OnGetZoneServerToTravelToStatusResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 	FNotifyGetZoneServerToTravelToDelegate OnNotifyGetZoneServerToTravelToDelegate;
 	FErrorGetZoneServerToTravelToDelegate OnErrorGetZoneServerToTravelToDelegate;
 
@@ -366,5 +368,14 @@ protected:
 	float ServerTravelRX;
 	float ServerTravelRY;
 	float ServerTravelRZ;
+
+	// Polling state for GetZoneServerToTravelTo when the zone instance is still starting up.
+	FTimerHandle ZoneStatusPollTimerHandle;
+	FString ZoneStatusCachedServerAndPort;
+	FString ZoneStatusCharacterName;
+	FString ZoneStatusZoneName;
+	int32 ZoneStatusPollCount = 0;
+	float ZoneStatusPollIntervalSeconds = 2.0f;
+	int32 ZoneStatusMaxPolls = 60;
 
 };
