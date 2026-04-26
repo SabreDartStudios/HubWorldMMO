@@ -277,8 +277,13 @@ public:
 
 	//GetZoneServerToTravelTo
 	UFUNCTION(BlueprintCallable, Category = "Travel")
-		void GetZoneServerToTravelTo(APlayerController* PlayerController, TEnumAsByte<ERPGSchemeToChooseMap::SchemeToChooseMap> SelectedSchemeToChooseMap, 
+		void GetZoneServerToTravelTo(APlayerController* PlayerController, TEnumAsByte<ERPGSchemeToChooseMap::SchemeToChooseMap> SelectedSchemeToChooseMap,
 			int32 WorldServerID, FString ZoneName, FVector LocationOnMap, FRotator StartingRotation);
+
+	// Forwards the zone travel request to the owning client so OWS Public API calls
+	// originate from the client, not the server.
+	UFUNCTION(Client, Reliable)
+		void OwningClient_GetZoneServerToTravelTo(int32 WorldServerID, const FString& ZoneName, FVector LocationOnMap, FRotator StartingRotation);
 
 	//Player Controller Component Delegate Bindings
 	void NotifyGetCustomCharacterData(TSharedPtr<FJsonObject> JsonObject);

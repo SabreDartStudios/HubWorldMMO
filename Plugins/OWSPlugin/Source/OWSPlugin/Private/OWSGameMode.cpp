@@ -695,6 +695,7 @@ void AOWSGameMode::OnGetZoneInstanceFromZoneInstanceIDResponseReceived(FHttpRequ
 	{
 		FGetServerInstanceFromPort ServerInstanceFromPort;
 		FString JsonString = Response->GetContentAsString();
+		UE_LOG(OWS, Warning, TEXT("OnGetZoneInstanceFromZoneInstanceIDResponseReceived raw response: %s"), *JsonString);
 		if (FJsonObjectConverter::JsonObjectStringToUStruct(JsonString, &ServerInstanceFromPort))
 		{
 			if (ServerInstanceFromPort.ZoneName != "")
@@ -758,11 +759,11 @@ void AOWSGameMode::OnUpdateNumberOfPlayersResponseReceived(FHttpRequestPtr Reque
 {
 	if (bWasSuccessful)
 	{
-		UE_LOG(OWS, Verbose, TEXT("OnUpdateNumberOfPlayersResponseReceived success!"));
+		UE_LOG(OWS, Warning, TEXT("OnUpdateNumberOfPlayersResponseReceived success: %s"), *Response->GetContentAsString());
 	}
 	else
 	{
-		UE_LOG(OWS, Verbose, TEXT("OnUpdateNumberOfPlayersResponseReceived Error accessing server!"));
+		UE_LOG(OWS, Error, TEXT("OnUpdateNumberOfPlayersResponseReceived Error accessing server!"));
 	}
 }
 

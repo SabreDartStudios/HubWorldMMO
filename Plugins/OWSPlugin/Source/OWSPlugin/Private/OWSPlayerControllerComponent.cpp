@@ -394,9 +394,8 @@ void UOWSPlayerControllerComponent::OnTravelToLastZoneServerResponseReceived(FHt
 //GetZoneServerToTravelTo
 void UOWSPlayerControllerComponent::GetZoneServerToTravelTo(FString CharacterName, TEnumAsByte<ERPGSchemeToChooseMap::SchemeToChooseMap> SelectedSchemeToChooseMap, int32 WorldServerID, FString ZoneName)
 {
-	// Cache for use by the status-polling path.
+	// Cache character name for use by the status-polling path.
 	ZoneStatusCharacterName = CharacterName;
-	ZoneStatusZoneName = ZoneName;
 
 	FTravelToLastZoneServerJSONPost TravelToLastZoneServerJSONPost;
 	TravelToLastZoneServerJSONPost.CharacterName = CharacterName;
@@ -445,7 +444,9 @@ void UOWSPlayerControllerComponent::OnGetZoneServerToTravelToResponseReceived(FH
 	UE_LOG(LogTemp, Warning, TEXT("ServerAndPort: %s"), *ServerAndPort);
 
 	int32 MapInstanceStatus = 0;
-	JsonObject->TryGetNumberField(TEXT("mapInstanceStatus"), MapInstanceStatus);
+	JsonObject->TryGetNumberField(TEXT("MapInstanceStatus"), MapInstanceStatus);
+
+	JsonObject->TryGetNumberField(TEXT("MapInstanceId"), ZoneStatusCachedMapInstanceId);
 
 	// Status 2 = server is ready and AddCharacterToMapInstanceByCharName has already been called.
 	if (MapInstanceStatus == 2)
@@ -482,7 +483,7 @@ void UOWSPlayerControllerComponent::PollGetZoneServerToTravelToStatus()
 
 	FGetServerToConnectToStatusJSONPost StatusPost;
 	StatusPost.CharacterName = ZoneStatusCharacterName;
-	StatusPost.ZoneName = ZoneStatusZoneName;
+	StatusPost.MapInstanceId = ZoneStatusCachedMapInstanceId;
 
 	FString PostParameters;
 	if (FJsonObjectConverter::UStructToJsonObjectString(StatusPost, PostParameters))
@@ -505,8 +506,11 @@ void UOWSPlayerControllerComponent::OnGetZoneServerToTravelToStatusResponseRecei
 		return;
 	}
 
+	FString StatusRawResponse = Response->GetContentAsString();
+	UE_LOG(LogTemp, Warning, TEXT("OnGetZoneServerToTravelToStatusResponseReceived raw response: %s"), *StatusRawResponse);
+
 	TSharedPtr<FJsonObject> JsonObject;
-	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
+	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(StatusRawResponse);
 
 	if (!FJsonSerializer::Deserialize(Reader, JsonObject))
 	{
@@ -516,19 +520,19 @@ void UOWSPlayerControllerComponent::OnGetZoneServerToTravelToStatusResponseRecei
 	}
 
 	bool bSuccess = false;
-	JsonObject->TryGetBoolField(TEXT("success"), bSuccess);
+	JsonObject->TryGetBoolField(TEXT("Success"), bSuccess);
 
 	if (!bSuccess)
 	{
 		FString ErrorMessage;
-		JsonObject->TryGetStringField(TEXT("errorMessage"), ErrorMessage);
+		JsonObject->TryGetStringField(TEXT("ErrorMessage"), ErrorMessage);
 		UE_LOG(LogTemp, Error, TEXT("OnGetZoneServerToTravelToStatusResponseReceived: %s"), *ErrorMessage);
 		OnErrorGetZoneServerToTravelToDelegate.ExecuteIfBound(ErrorMessage.IsEmpty() ? TEXT("Server status check failed.") : ErrorMessage);
 		return;
 	}
 
 	int32 MapInstanceStatus = 0;
-	JsonObject->TryGetNumberField(TEXT("mapInstanceStatus"), MapInstanceStatus);
+	JsonObject->TryGetNumberField(TEXT("MapInstanceStatus"), MapInstanceStatus);
 
 	if (MapInstanceStatus == 2)
 	{

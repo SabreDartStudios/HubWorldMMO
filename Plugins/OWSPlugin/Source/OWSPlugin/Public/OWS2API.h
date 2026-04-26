@@ -52,13 +52,13 @@ struct FGetServerToConnectToStatusJSONPost
 public:
 	FGetServerToConnectToStatusJSONPost() {
 		CharacterName = "";
-		ZoneName = "";
+		MapInstanceId = 0;
 	}
 
 	UPROPERTY()
 		FString CharacterName;
 	UPROPERTY()
-		FString ZoneName;
+		int32 MapInstanceId;
 };
 
 USTRUCT()

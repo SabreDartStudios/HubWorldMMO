@@ -469,13 +469,29 @@ void AHWPlayerController::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 
 
 //Zone Travel
-void AHWPlayerController::GetZoneServerToTravelTo(APlayerController* PlayerController, TEnumAsByte<ERPGSchemeToChooseMap::SchemeToChooseMap> SelectedSchemeToChooseMap, 
+void AHWPlayerController::GetZoneServerToTravelTo(APlayerController* PlayerController, TEnumAsByte<ERPGSchemeToChooseMap::SchemeToChooseMap> SelectedSchemeToChooseMap,
 	int32 WorldServerID, FString ZoneName, FVector LocationOnMap, FRotator StartingRotation)
+{
+	// This is always called server-side (trigger volumes run with authority).
+	// OWS Public API calls must originate from the client, so forward via RPC.
+	OwningClient_GetZoneServerToTravelTo(WorldServerID, ZoneName, LocationOnMap, StartingRotation);
+}
+
+/*
+void AHWPlayerController::OwningClient_GetZoneServerToTravelTo_Implementation(TEnumAsByte<ERPGSchemeToChooseMap::SchemeToChooseMap> SelectedSchemeToChooseMap,
+	int32 WorldServerID, FString ZoneName, FVector LocationOnMap, FRotator StartingRotation)
+{
+*/
+void AHWPlayerController::OwningClient_GetZoneServerToTravelTo_Implementation(
+	int32 WorldServerID,
+	const FString & ZoneName,
+	FVector LocationOnMap,
+	FRotator StartingRotation)
 {
 	ZoneToTravelToLocation = LocationOnMap;
 	ZoneToTravelToStartingRotation = StartingRotation;
-	FString CharacterName = PlayerController->PlayerState->GetPlayerName();
-	OWSPlayerControllerComponent->GetZoneServerToTravelTo(CharacterName, SelectedSchemeToChooseMap, WorldServerID, ZoneName);
+	FString CharacterName = GetPlayerState<APlayerState>()->GetPlayerName();
+	OWSPlayerControllerComponent->GetZoneServerToTravelTo(CharacterName, ERPGSchemeToChooseMap::SchemeToChooseMap::MapWithFewestPlayers, WorldServerID, ZoneName);
 }
 
 
