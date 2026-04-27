@@ -310,17 +310,20 @@ void UOWSPlayerControllerComponent::OnSetSelectedCharacterAndConnectToLastZoneRe
 	}
 }
 
-//TravelToLastZoneServer
+//TravelToLastZoneServer - routes through the shared GetZoneServerToTravelTo handlers so polling is supported.
 void UOWSPlayerControllerComponent::TravelToLastZoneServer(FString CharacterName)
 {
+	bZoneStatusIsLastZone = true;
+	ZoneStatusCharacterName = CharacterName;
+
 	FTravelToLastZoneServerJSONPost TravelToLastZoneServerJSONPost;
 	TravelToLastZoneServerJSONPost.CharacterName = CharacterName;
-	TravelToLastZoneServerJSONPost.ZoneName = "GETLASTZONENAME";
+	TravelToLastZoneServerJSONPost.ZoneName = TEXT("GETLASTZONENAME");
 	TravelToLastZoneServerJSONPost.PlayerGroupType = 0;
-	FString PostParameters = "";
+	FString PostParameters;
 	if (FJsonObjectConverter::UStructToJsonObjectString(TravelToLastZoneServerJSONPost, PostParameters))
 	{
-		ProcessOWS2POSTRequest("PublicAPI", "api/Users/GetServerToConnectTo", PostParameters, &UOWSPlayerControllerComponent::OnTravelToLastZoneServerResponseReceived);
+		ProcessOWS2POSTRequest("PublicAPI", "api/Users/GetServerToConnectTo", PostParameters, &UOWSPlayerControllerComponent::OnGetZoneServerToTravelToResponseReceived);
 	}
 	else
 	{
@@ -328,74 +331,12 @@ void UOWSPlayerControllerComponent::TravelToLastZoneServer(FString CharacterName
 	}
 }
 
-void UOWSPlayerControllerComponent::OnTravelToLastZoneServerResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
-{
-	FString ServerAndPort;
-
-	if (!GetWorld())
-	{
-		return;
-	}
-
-	UOWSGameInstance* GameInstance = Cast<UOWSGameInstance>(GetWorld()->GetGameInstance());
-
-	if (!GameInstance)
-	{
-		return;
-	}
-
-	if (bWasSuccessful)
-	{
-		TSharedPtr<FJsonObject> JsonObject;
-		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
-
-		if (FJsonSerializer::Deserialize(Reader, JsonObject))
-		{
-			FString ServerIP = JsonObject->GetStringField(TEXT("serverip"));
-			FString Port = JsonObject->GetStringField(TEXT("port"));
-
-			if (ServerIP.IsEmpty() || Port.IsEmpty())
-			{
-				UE_LOG(OWS, Error, TEXT("OnTravelToLastZoneServerResponseReceived Cannot Get Server IP and Port!"));
-				return;
-			}
-
-			ServerAndPort = ServerIP + FString(TEXT(":")) + Port.Left(4);
-
-			UE_LOG(OWS, Warning, TEXT("OnTravelToLastZoneServerResponseReceived ServerAndPort: %s"), *ServerAndPort);
-
-			//Encrypt data to send
-			FString IDData = FString::SanitizeFloat(ServerTravelX)
-				+ "|" + FString::SanitizeFloat(ServerTravelY)
-				+ "|" + FString::SanitizeFloat(ServerTravelZ)
-				+ "|" + FString::SanitizeFloat(ServerTravelRX)
-				+ "|" + FString::SanitizeFloat(ServerTravelRY)
-				+ "|" + FString::SanitizeFloat(ServerTravelRZ)
-				+ "|" + FGenericPlatformHttp::UrlEncode(ServerTravelCharacterName)
-				+ "|" + ServerTravelUserSessionGUID;
-			FString EncryptedIDData = GameInstance->EncryptWithAES(IDData, OWSEncryptionKey);
-
-			FString URL = ServerAndPort
-				+ FString(TEXT("?ID=")) + EncryptedIDData;
-
-			TravelToMap(URL, false);
-		}
-		else
-		{
-			UE_LOG(OWS, Error, TEXT("OnTravelToLastZoneServerResponseReceived Server returned no data!"));
-		}
-	}
-	else
-	{
-		UE_LOG(OWS, Error, TEXT("OnTravelToLastZoneServerResponseReceived Error accessing server!"));
-	}
-}
-
 //GetZoneServerToTravelTo
 void UOWSPlayerControllerComponent::GetZoneServerToTravelTo(FString CharacterName, TEnumAsByte<ERPGSchemeToChooseMap::SchemeToChooseMap> SelectedSchemeToChooseMap, int32 WorldServerID, FString ZoneName)
 {
+	bZoneStatusIsLastZone = false;
 	// Cache character name for use by the status-polling path.
-	ZoneStatusCharacterName = CharacterName;
+wwwww	ZoneStatusCharacterName = CharacterName;
 
 	FTravelToLastZoneServerJSONPost TravelToLastZoneServerJSONPost;
 	TravelToLastZoneServerJSONPost.CharacterName = CharacterName;
@@ -451,7 +392,10 @@ void UOWSPlayerControllerComponent::OnGetZoneServerToTravelToResponseReceived(FH
 	// Status 2 = server is ready and AddCharacterToMapInstanceByCharName has already been called.
 	if (MapInstanceStatus == 2)
 	{
-		OnNotifyGetZoneServerToTravelToDelegate.ExecuteIfBound(ServerAndPort);
+		if (bZoneStatusIsLastZone)
+			DoTravelToLastZone(ServerAndPort);
+		else
+			OnNotifyGetZoneServerToTravelToDelegate.ExecuteIfBound(ServerAndPort);
 		return;
 	}
 
@@ -538,7 +482,10 @@ void UOWSPlayerControllerComponent::OnGetZoneServerToTravelToStatusResponseRecei
 	{
 		// Server is ready — AddCharacterToMapInstanceByCharName was already called server-side.
 		UE_LOG(LogTemp, Warning, TEXT("Zone server ready after %d poll(s), travelling to %s"), ZoneStatusPollCount, *ZoneStatusCachedServerAndPort);
-		OnNotifyGetZoneServerToTravelToDelegate.ExecuteIfBound(ZoneStatusCachedServerAndPort);
+		if (bZoneStatusIsLastZone)
+			DoTravelToLastZone(ZoneStatusCachedServerAndPort);
+		else
+			OnNotifyGetZoneServerToTravelToDelegate.ExecuteIfBound(ZoneStatusCachedServerAndPort);
 		return;
 	}
 
@@ -551,6 +498,36 @@ void UOWSPlayerControllerComponent::OnGetZoneServerToTravelToStatusResponseRecei
 		ZoneStatusPollIntervalSeconds,
 		false
 	);
+}
+
+// Performs the actual client travel for the TravelToLastZoneServer path once the zone server is confirmed ready.
+// Cannot use TravelToMap2 here because OWSPlayerState is unavailable on the character-select screen.
+void UOWSPlayerControllerComponent::DoTravelToLastZone(const FString& ServerAndPort)
+{
+	if (!GetWorld())
+	{
+		return;
+	}
+
+	UOWSGameInstance* GameInstance = Cast<UOWSGameInstance>(GetWorld()->GetGameInstance());
+	if (!GameInstance)
+	{
+		return;
+	}
+
+	UE_LOG(OWS, Warning, TEXT("DoTravelToLastZone ServerAndPort: %s"), *ServerAndPort);
+
+	FString IDData = FString::SanitizeFloat(ServerTravelX)
+		+ "|" + FString::SanitizeFloat(ServerTravelY)
+		+ "|" + FString::SanitizeFloat(ServerTravelZ)
+		+ "|" + FString::SanitizeFloat(ServerTravelRX)
+		+ "|" + FString::SanitizeFloat(ServerTravelRY)
+		+ "|" + FString::SanitizeFloat(ServerTravelRZ)
+		+ "|" + FGenericPlatformHttp::UrlEncode(ServerTravelCharacterName)
+		+ "|" + ServerTravelUserSessionGUID;
+	FString EncryptedIDData = GameInstance->EncryptWithAES(IDData, OWSEncryptionKey);
+
+	TravelToMap(ServerAndPort + TEXT("?ID=") + EncryptedIDData, false);
 }
 
 void UOWSPlayerControllerComponent::SavePlayerLocation()

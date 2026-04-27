@@ -125,7 +125,6 @@ public:
 
 	//Travel to Last Zone Server
 		void TravelToLastZoneServer(FString CharacterName);
-		void OnTravelToLastZoneServerResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 
 	//Get Zone Server to Travel To
 	UFUNCTION(BlueprintCallable, Category = "Travel")
@@ -369,7 +368,7 @@ protected:
 	float ServerTravelRY;
 	float ServerTravelRZ;
 
-	// Polling state for GetZoneServerToTravelTo when the zone instance is still starting up.
+	// Polling state for GetZoneServerToTravelTo / TravelToLastZoneServer when the zone instance is still starting up.
 	FTimerHandle ZoneStatusPollTimerHandle;
 	FString ZoneStatusCachedServerAndPort;
 	FString ZoneStatusCharacterName;
@@ -377,5 +376,10 @@ protected:
 	int32 ZoneStatusPollCount = 0;
 	float ZoneStatusPollIntervalSeconds = 2.0f;
 	int32 ZoneStatusMaxPolls = 60;
+	// When true, server-ready completion travels directly (character-select path).
+	// When false, the OnNotifyGetZoneServerToTravelToDelegate is fired (in-game portal path).
+	bool bZoneStatusIsLastZone = false;
+
+	void DoTravelToLastZone(const FString& ServerAndPort);
 
 };
