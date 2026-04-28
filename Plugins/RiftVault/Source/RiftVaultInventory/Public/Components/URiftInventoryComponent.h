@@ -238,6 +238,13 @@ public:
     UFUNCTION(BlueprintCallable, Category = "RiftVault|Inventory")
     void SetPersistenceObject(UObject* NewPersistenceObject);
 
+    /**
+     * Called by the persistence backend once the OWS load result is available.
+     * Bypasses dynamic-delegate marshaling — the backend calls this directly
+     * rather than routing through FOnLoadComplete.
+     */
+    void DeliverLoadResult(bool bSuccess, const FRiftInventorySaveData& SaveData);
+
     // ------------------------------------------------------------------
     // Container API
     // ------------------------------------------------------------------

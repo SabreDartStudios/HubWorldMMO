@@ -1,5 +1,10 @@
 #include "Components/URiftInventoryComponent.h"
 
+#include "Dom/JsonObject.h"
+#include "Dom/JsonValue.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonWriter.h"
 #include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "Interfaces/IRiftPersistenceInterface.h"
@@ -168,6 +173,11 @@ void URiftInventoryComponent::SetPersistenceObject(UObject* NewPersistenceObject
     PersistenceObject = NewPersistenceObject;
 }
 
+void URiftInventoryComponent::DeliverLoadResult(bool bSuccess, const FRiftInventorySaveData& SaveData)
+{
+    OnInventoryLoaded(bSuccess, SaveData);
+}
+
 void URiftInventoryComponent::InitializeInventory()
 {
     UE_LOG(LogTemp, Log, TEXT("URiftInventoryComponent::InitializeInventory — creating %d default containers."), DefaultContainers.Num());
@@ -213,14 +223,99 @@ void URiftInventoryComponent::OnInventoryLoaded(const bool bSuccess, const FRift
     if (!bSuccess)
     {
         UE_LOG(LogTemp, Warning, TEXT("URiftInventoryComponent: Failed to load inventory."));
-        // Load failed — grant defaults so the player isn't left with an empty inventory.
         AddDefaultItems();
         bIsInitialized = true;
         BroadcastInitialized(false);
         return;
     }
 
-    // Grant defaults only if the loaded save contained no items (fresh account).
+    if (SaveData.InventoryData.Num() > 0)
+    {
+        // Null-terminate the UTF-8 blob so UTF8_TO_TCHAR is safe, then parse JSON.
+        TArray<uint8> Bytes = SaveData.InventoryData;
+        Bytes.Add(0);
+        const FString JsonString(UTF8_TO_TCHAR(reinterpret_cast<const char*>(Bytes.GetData())));
+
+        TSharedPtr<FJsonObject> Root;
+        TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
+        if (FJsonSerializer::Deserialize(Reader, Root) && Root.IsValid())
+        {
+            const TArray<TSharedPtr<FJsonValue>>* ContainerArray;
+            if (Root->TryGetArrayField(TEXT("containers"), ContainerArray))
+            {
+                for (const TSharedPtr<FJsonValue>& ContValue : *ContainerArray)
+                {
+                    const TSharedPtr<FJsonObject> ContObj = ContValue->AsObject();
+                    if (!ContObj.IsValid()) { continue; }
+
+                    FString ContDefPath;
+                    if (!ContObj->TryGetStringField(TEXT("def"), ContDefPath)) { continue; }
+
+                    URiftContainerDefinition* ContDef = LoadObject<URiftContainerDefinition>(nullptr, *ContDefPath);
+                    URiftContainer* Container = IsValid(ContDef) ? GetContainerByDefinition(ContDef) : nullptr;
+                    if (!IsValid(Container))
+                    {
+                        UE_LOG(LogTemp, Warning, TEXT("URiftInventoryComponent::OnInventoryLoaded — no container for saved def '%s', skipping."), *ContDefPath);
+                        continue;
+                    }
+
+                    const TArray<TSharedPtr<FJsonValue>>* SlotArray;
+                    if (!ContObj->TryGetArrayField(TEXT("slots"), SlotArray)) { continue; }
+
+                    for (int32 SlotIndex = 0; SlotIndex < SlotArray->Num(); ++SlotIndex)
+                    {
+                        const TSharedPtr<FJsonValue>& SlotValue = (*SlotArray)[SlotIndex];
+                        if (!SlotValue.IsValid() || SlotValue->Type == EJson::Null) { continue; }
+
+                        const TSharedPtr<FJsonObject> SlotObj = SlotValue->AsObject();
+                        if (!SlotObj.IsValid()) { continue; }
+
+                        FString ItemDefPath;
+                        if (!SlotObj->TryGetStringField(TEXT("def"), ItemDefPath)) { continue; }
+
+                        int32 Quantity = 1;
+                        SlotObj->TryGetNumberField(TEXT("qty"), Quantity);
+
+                        URiftItemDefinition* ItemDef = LoadObject<URiftItemDefinition>(nullptr, *ItemDefPath);
+                        if (!IsValid(ItemDef))
+                        {
+                            UE_LOG(LogTemp, Warning, TEXT("URiftInventoryComponent::OnInventoryLoaded — item def '%s' not found, skipping slot %d."), *ItemDefPath, SlotIndex);
+                            continue;
+                        }
+
+                        // Grow the slot array for List-layout containers that don't pre-allocate.
+                        if (!Container->Slots.Entries.IsValidIndex(SlotIndex))
+                        {
+                            Container->Slots.Entries.SetNum(SlotIndex + 1);
+                        }
+
+                        if (IsValid(Container->Slots.Entries[SlotIndex].Item))
+                        {
+                            continue; // slot already occupied — shouldn't happen on a fresh load
+                        }
+
+                        URiftItemInstance* NewItem = CreateItemInstance(ItemDef);
+                        if (!Container->PlaceItemAtSlot(NewItem, SlotIndex))
+                        {
+                            continue;
+                        }
+
+                        FRiftItemEntry NewEntry;
+                        NewEntry.Item = NewItem;
+                        Items.Entries.Add(NewEntry);
+
+                        FinalizeNewItem(NewItem, Container, Quantity);
+                    }
+                }
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("URiftInventoryComponent::OnInventoryLoaded — failed to parse inventory JSON, granting defaults."));
+        }
+    }
+
+    // AddDefaultItems is a no-op if items were already loaded above (Items.Entries not empty).
     AddDefaultItems();
     bIsInitialized = true;
     BroadcastInitialized(true);
@@ -243,6 +338,50 @@ void URiftInventoryComponent::SaveInventory()
             {
                 SaveData.PlayerId = PlayerState->GetPlayerName();
             }
+
+            // Serialize containers and their slot contents to JSON.
+            // Format: { "v":1, "containers": [ { "def":"<asset_path>", "slots":[ {"def":"...","qty":N} | null, ... ] }, ... ] }
+            TSharedPtr<FJsonObject> Root = MakeShareable(new FJsonObject);
+            Root->SetNumberField(TEXT("v"), 1);
+
+            TArray<TSharedPtr<FJsonValue>> ContainerArray;
+            for (const FRiftContainerEntry& ContEntry : Containers.Entries)
+            {
+                URiftContainer* Container = ContEntry.Container.Get();
+                if (!IsValid(Container) || !IsValid(Container->GetDefinition()))
+                {
+                    continue;
+                }
+
+                TSharedPtr<FJsonObject> ContObj = MakeShareable(new FJsonObject);
+                ContObj->SetStringField(TEXT("def"), Container->GetDefinition()->GetPathName());
+
+                TArray<TSharedPtr<FJsonValue>> SlotArray;
+                for (const FRiftSlotEntry& SlotEntry : Container->Slots.Entries)
+                {
+                    if (IsValid(SlotEntry.ItemDefinition) && SlotEntry.Quantity > 0)
+                    {
+                        TSharedPtr<FJsonObject> SlotObj = MakeShareable(new FJsonObject);
+                        SlotObj->SetStringField(TEXT("def"), SlotEntry.ItemDefinition->GetPathName());
+                        SlotObj->SetNumberField(TEXT("qty"), SlotEntry.Quantity);
+                        SlotArray.Add(MakeShareable(new FJsonValueObject(SlotObj)));
+                    }
+                    else
+                    {
+                        SlotArray.Add(MakeShareable(new FJsonValueNull()));
+                    }
+                }
+                ContObj->SetArrayField(TEXT("slots"), SlotArray);
+                ContainerArray.Add(MakeShareable(new FJsonValueObject(ContObj)));
+            }
+            Root->SetArrayField(TEXT("containers"), ContainerArray);
+
+            FString JsonString;
+            TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&JsonString);
+            FJsonSerializer::Serialize(Root.ToSharedRef(), Writer);
+
+            FTCHARToUTF8 Converter(*JsonString);
+            SaveData.InventoryData.Append(reinterpret_cast<const uint8*>(Converter.Get()), Converter.Length());
 
             FOnSaveComplete SaveCallback;
             IRiftPersistenceInterface::Execute_SaveInventory(PersistenceObject, SaveData, SaveCallback);

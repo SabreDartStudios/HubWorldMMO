@@ -13,6 +13,8 @@ AHWPlayerState::AHWPlayerState()
 	// Must be set before BeginPlay so URiftInventoryComponent::InitializeInventory()
 	// finds a backend and kicks off the async load.
 	InventoryComponent->SetPersistenceObject(this);
+
+	bLoadInventoryRequested = false;
 }
 
 // -- IRiftPersistenceInterface --
@@ -48,15 +50,14 @@ void AHWPlayerState::LoadInventory_Implementation(const FString& InPlayerId, con
 	if (!HasAuthority())
 	{
 		// Client inventory state arrives via bIsInitialized replication, not the persistence path.
-		// Intentionally do not store or fire the callback on clients.
 		return;
 	}
 
-	// Store the callback. The actual data arrives later when
-	// AHWPlayerController::NotifyGetCustomCharacterData dispatches the "RiftInventory" row.
-	PendingLoadDelegate = OnComplete;
+	// Mark that InitializeInventory has run and containers are ready.
+	// DeliverInventoryLoadResult uses this to know it can safely populate the component.
+	bLoadInventoryRequested = true;
 
-	// If DeliverInventoryLoadResult already fired before BeginPlay stored our delegate, fire now.
+	// If DeliverInventoryLoadResult already fired before we were ready, deliver now.
 	if (bHasCachedResult)
 	{
 		bHasCachedResult = false;
@@ -66,15 +67,21 @@ void AHWPlayerState::LoadInventory_Implementation(const FString& InPlayerId, con
 
 void AHWPlayerState::DeliverInventoryLoadResult(bool bSuccess, const FString& Base64String)
 {
-	if (!PendingLoadDelegate.IsBound())
+	if (!HasAuthority())
 	{
-		// LoadInventory_Implementation hasn't run yet — cache the result so it fires immediately when it does.
+		// Client inventory state arrives via bIsInitialized replication, not the persistence path.
+		return;
+	}
+	/*
+	if (!bLoadInventoryRequested)
+	{
+		// InitializeInventory hasn't run yet — cache until LoadInventory_Implementation fires.
 		bHasCachedResult = true;
 		bCachedSuccess = bSuccess;
 		CachedInventoryData = Base64String;
 		return;
 	}
-
+	*/
 	FRiftInventorySaveData SaveData;
 	SaveData.PlayerId = GetPlayerName();
 
@@ -83,5 +90,5 @@ void AHWPlayerState::DeliverInventoryLoadResult(bool bSuccess, const FString& Ba
 		FBase64::Decode(Base64String, SaveData.InventoryData);
 	}
 
-	PendingLoadDelegate.ExecuteIfBound(bSuccess, SaveData);
+	InventoryComponent->DeliverLoadResult(bSuccess, SaveData);
 }

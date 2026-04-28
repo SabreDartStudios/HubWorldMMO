@@ -40,11 +40,12 @@ public:
 
 private:
 
-	/** Stored by LoadInventory_Implementation; fired by DeliverInventoryLoadResult. */
-	FOnLoadComplete PendingLoadDelegate;
+	// Set to true once LoadInventory_Implementation has run (containers are ready).
+	// Guards against DeliverInventoryLoadResult arriving before InitializeInventory completes.
+	bool bLoadInventoryRequested = false;
 
 	// Delivery cache — guards against DeliverInventoryLoadResult arriving before
-	// LoadInventory_Implementation has stored PendingLoadDelegate (timing race on fast loopback).
+	// LoadInventory_Implementation has been called (timing race on fast loopback).
 	bool bHasCachedResult = false;
 	bool bCachedSuccess = false;
 	FString CachedInventoryData;

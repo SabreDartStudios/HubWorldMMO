@@ -21,6 +21,7 @@ public class RiftVaultInventory : ModuleRules
         {
             "CoreUObject",
             "Engine",
+            "Json",
             "Niagara",
             "UMG",
             "Slate",

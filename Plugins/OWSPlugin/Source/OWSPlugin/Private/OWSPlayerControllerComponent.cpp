@@ -336,7 +336,7 @@ void UOWSPlayerControllerComponent::GetZoneServerToTravelTo(FString CharacterNam
 {
 	bZoneStatusIsLastZone = false;
 	// Cache character name for use by the status-polling path.
-wwwww	ZoneStatusCharacterName = CharacterName;
+	ZoneStatusCharacterName = CharacterName;
 
 	FTravelToLastZoneServerJSONPost TravelToLastZoneServerJSONPost;
 	TravelToLastZoneServerJSONPost.CharacterName = CharacterName;
